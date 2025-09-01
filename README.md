@@ -1,43 +1,117 @@
-# Intelligent Molecules — Shopify Concierge (RAG) Starter
+# ⚛️ Intelligent Molecules Concierge
 
-This is a ready-to-deploy Retrieval‑Augmented (RAG) concierge for your Shopify store. It answers product FAQs, timing/stacking/safety questions with DSHEA guardrails, and checks order status via Shopify Admin.
+A small, Retrieval-Augmented Generation chatbot designed with specific safety guardrails for Intelligent Molecules. It answers from a single source-of-truth and refuses anything outside its scope, while still maintaining the conversationalism and helpfulness of ChatGPT.
 
-## 1) Vercel env vars (Project → Settings → Environment Variables)
+* **Tech Stack**:  OpenAI, Vercel, Node.js serverless, vanilla JS widget
+* **Highlights**: evidence-first answers, deterministic guardrails, human escalation
+
+---
+
+## What this is
+
+A **RAG** concierge for the Intelligent Molecules
+
+* Answers timing/dosage/stacking, safety positioning, shipping/returns
+* Refuses medical advice (medications, pregnancy, conditions) with a warm, consistent handoff
+* Embeddable Shopify widget that connects to API for order info
+
+Why RAG (not a “plain” chatbot)? Because we want **auditable, source-backed** answers—or a friendly refusal—every time.
+
+---
+
+## How it works (architecture)
+
 ```
-OPENAI_API_KEY=sk-...
-SHOPIFY_SHOP=yourshop.myshopify.com
-SHOPIFY_ADMIN_TOKEN=shpat_...
-SHOPIFY_API_VERSION=2024-07
-ORIGIN_ALLOWED=https://YOUR_STORE_DOMAIN
-```
-
-## 2) Knowledge → embeddings
-1. Edit the files in `data/knowledge/` as needed.
-2. Install deps and build embeddings:
-```
-npm i
-npm run ingest
-```
-This creates `data/embeddings.json` (ignored by git). Re-run whenever the knowledge changes.
-
-## 3) Deploy
-Push or upload the ZIP to Vercel. After deploy, note your URL, e.g. `https://your-vercel-app.vercel.app`.
-
-## 4) Add widget to Shopify theme
-In **Online Store → Themes → Edit code**, open `layout/theme.liquid` and paste **before `</body>`**:
-```liquid
-<script
-  defer
-  src="https://YOUR-VERCEL-APP.vercel.app/im-assistant.js"
-  data-api-base="https://YOUR-VERCEL-APP.vercel.app"
-  data-brand-email="info@intelligentmolecules.com">
-</script>
+Browser (widget)
+   ↓
+/api/chat  (Vercel function)         /api/order  (Vercel function)
+   │                                    │
+   ├─ Embed question → vector           └─ Shopify Admin API (read_orders)
+   ├─ Compare to embedded SSoT chunks
+   ├─ Select Top-K above a score gate
+   └─ Chat Completions (short answer + DSHEA + citations)
 ```
 
-## Endpoints
-- `POST /api/chat` → `{ message }` → returns `{ answer, sources[] }`
-- `POST /api/order` → `{ orderNumber, email }` → returns order summary
+* **Knowledge** lives in `data/knowledge/*.md` → embedded into `data/embeddings.json`.
+* `/api/chat` retrieves top matches by **cosine similarity**, applies a **minimum score gate**, and composes a short answer via **`/v1/chat/completions`** (`gpt-4o-mini`).
+* `/api/order` (optional) fetches by `name` (order number), **verifies `email`**, returns status/tracking.
 
-## Safety
-- No medical advice; DSHEA disclaimer displayed in UI (not appended per message).
-- Auto-escalates meds/pregnancy/conditions to human support.
+---
+
+## Safety guardrails
+
+* **No medical advice**; refuse meds/pregnancy/specific conditions; emergency queries get a **hard stop**.
+* **RAG gate:** if no doc chunk clears the similarity threshold, **don’t answer**—escalate.
+* **DSHEA footer** appended to every answer.
+* **Citations** only for chunks that clear a citation floor.
+
+(An optional keyword-based **intent router** can sit before RAG to deterministically route RED/BLACK cases to refusal; see “Roadmap”.)
+
+---
+
+## Repo layout
+
+```
+api/
+  chat.js          # RAG answer endpoint (Chat Completions; DSHEA; citations)
+  order.js         # (Optional) Shopify order-status endpoint (read_orders)
+data/
+  knowledge/
+    a-minus-facts.md
+    safety-disclaimers.md
+    shipping-returns.md
+  embeddings.json  # Vector index (committed for sandbox, see below)
+scripts/
+  ingest.js        # Build embeddings.json from /data/knowledge/*.md
+im-assistant.js    # Embeddable widget (vanilla JS)
+test.html          # Sandbox page (no Shopify theme needed)
+vercel.json        # Bundle data/** into serverless functions
+package.json
+README.md
+```
+
+---
+
+## Retrieval tuning (scores, Top-K, gates)
+
+Inside `api/chat.js` you’ll find (or can add) the knobs:
+
+```js
+const TOP_K = 4;               // how many chunks to include
+const MIN_SCORE = 0.25;        // retrieval gate: must be >= to use in context
+const CITATION_MIN_SCORE = 0.25; // must be >= to appear in "Based on:"
+```
+
+**What they do:**
+
+* **Cosine score** (≈ 0.05–0.60 typical; higher = closer) measures question↔chunk similarity.
+* **Top-K** balances coverage vs. noise (default 4).
+* **Gate** enforces “no strong evidence → no answer”.
+* **Citation floor** keeps weak matches out of the “Based on:” footnote.
+
+> With a small corpus, a low-scoring chunk can still rank Top-K by **order**, but the **gate** prevents it from being **used or cited**.
+
+---
+
+## Security & compliance notes
+
+* Never commit secrets. Keys live in **Vercel envs**.
+* Don’t log PII. `/api/order` verifies email and returns only status/tracking.
+* DSHEA disclaimer is appended to every answer.
+* The bot **refuses** medical advice (medications, pregnancy/breastfeeding, conditions) and emergency queries.
+
+---
+
+## Roadmap / nice-to-haves
+
+* **Intent router** (pre-RAG): lightweight rules (or tiny classifier) to route:
+
+  * GREEN → RAG answer
+  * YELLOW → cautious answer + invite human
+  * RED → refusal + handoff
+  * BLACK → emergency stop
+* **Programmatic FAQ hubs** the bot can cite (SEO × CX).
+* **Internationalization** once labels/claims are approved.
+* **Build-time eval**: CI step that runs a small scenario set and fails on unsafe answers.
+
+---
