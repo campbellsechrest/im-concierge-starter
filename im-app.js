@@ -26,7 +26,7 @@
   const app = document.createElement('div');
   app.className = 'app';
   app.innerHTML = `
-    <div class="header">A‑Minus Concierge <span style="font-weight:400;color:#6b7280">General info only — not medical advice</span></div>
+    <div class="header">Intelligent Molecules Concierge <span style="font-weight:400;color:#6b7280">General info only — not medical advice</span></div>
     <div class="actions">
       <span class="chip" data-q="When should I take A‑Minus?">When to take</span>
       <span class="chip" data-q="Can I take A‑Minus with my medications?">Meds & spacing</span>
@@ -113,6 +113,5 @@
   });
 
   // Welcome message
-  addMsg("Hi! I’m your A‑Minus Concierge. Ask about timing, stacking, safety, or orders.");
+  addMsg("Hi! I’m the Intelligent Molecules Concierge. Ask about timing, stacking, safety, or orders.");
 })();
-
