@@ -52,13 +52,6 @@
     div.className = `msg ${who}`;
     div.innerHTML = html;
     bodyEl.appendChild(div);
-    if (sources && sources.length) {
-      const note = document.createElement('div');
-      note.className = 'note';
-      const links = sources.map(s=>`<a href="${s.url}" target="_blank" rel="nofollow noopener">${s.id}</a>`).join(' • ');
-      note.innerHTML = `Based on: ${links}`;
-      bodyEl.appendChild(note);
-    }
     bodyEl.scrollTop = bodyEl.scrollHeight;
   };
 
@@ -71,7 +64,7 @@
       });
       const j = await r.json();
       const answer = (j && (j.answer || j.text || 'Sorry, I could not answer.'));
-      addMsg(answer, 'bot', j.sources||[]);
+      addMsg(answer, 'bot');
     } catch (e){
       addMsg('Hmm, I hit a snag. Please try again or email '+BRAND_EMAIL+'.');
     }
