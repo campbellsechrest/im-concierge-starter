@@ -111,5 +111,5 @@
   });
 
   // Welcome message
-  addMsg("Hi! I’m the Intelligent Molecules Concierge. Ask about timing, stacking, safety, or orders.");
+  addMsg("Hi! I’m the Intelligent Molecules Concierge. How can I help?");
 })();
