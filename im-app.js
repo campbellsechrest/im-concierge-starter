@@ -33,7 +33,7 @@
     <div class="header">Intelligent Molecules Concierge <span class="subnote">General info only — not medical advice</span></div>
     <div class="actions">
       <span class="chip" data-q="When should I take A‑Minus?">When to take</span>
-      <span class="chip" data-q="Can I take A‑Minus with my medications?">Meds & spacing</span>
+      <span class="chip" data-q="What is the science behind A-Minus?">Science</span>
       <span class="chip" data-q="What is your return policy?">Returns</span>
       <span class="chip" data-order="1">Where’s my order?</span>
       <span class="chip" data-q="What can I stack A‑Minus with?">Stacking</span>

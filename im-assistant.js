@@ -27,7 +27,7 @@
     <div class="im-header">A‑Minus Concierge <button id="imClose" style="border:none;background:transparent;font-size:18px;cursor:pointer">×</button></div>
     <div class="im-actions">
       <span class="im-chip" data-q="When should I take A‑Minus?">When to take</span>
-      <span class="im-chip" data-q="Can I take A‑Minus with my medications?">Meds & spacing</span>
+      <span class="im-chip" data-q="What is the science behind A-Minus?">Science</span>
       <span class="im-chip" data-q="What is your return policy?">Returns</span>
       <span class="im-chip" data-order="1">Where’s my order?</span>
       <span class="im-chip" data-q="What can I stack A‑Minus with?">Stacking</span>
