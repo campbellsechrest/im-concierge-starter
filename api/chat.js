@@ -1,5 +1,7 @@
 import fs from 'fs';
 
+import path from 'path';
+
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const ORIGIN_ALLOWED = process.env.ORIGIN_ALLOWED || '*';
 
@@ -34,7 +36,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  const embeddingsPath = 'data/embeddings.json';
+  const embeddingsPath = path.join(process.cwd(), 'data', 'embeddings.json');
+
   if (!OPENAI_KEY) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
 
   try {
@@ -44,7 +47,11 @@ export default async function handler(req, res) {
     if (!fs.existsSync(embeddingsPath)) {
       return res.status(500).json({ error: 'embeddings.json not found. Run npm run ingest.' });
     }
-    const corpus = JSON.parse(fs.readFileSync(embeddingsPath, 'utf8'));
+    const corpus = JSON.parse(
+  fs.readFileSync(path.join(process.cwd(), 'data', 'embeddings.json'), 'utf8')
+);
+
+
     const qEmb = await embedQuery(message);
     const scored = corpus.docs
       .map(d => ({ ...d, score: cosine(qEmb, d.embedding) }))
