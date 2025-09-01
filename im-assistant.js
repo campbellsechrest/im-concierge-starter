@@ -1,7 +1,6 @@
 (()=>{
   const API_BASE = document.currentScript?.dataset.apiBase || "";
   const BRAND_EMAIL = document.currentScript?.dataset.brandEmail || "info@intelligentmolecules.com";
-  const FOOTER_DISC = "These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure or prevent any disease.";
 
   const css = `
   .im-bubble{position:fixed;right:16px;bottom:16px;width:56px;height:56px;border-radius:9999px;background:#111;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.2);z-index:999999}
@@ -60,8 +59,6 @@
       note.innerHTML = `Based on: ${links}`;
       bodyEl.appendChild(note);
     }
-    const disc = document.createElement('div');
-    disc.className = 'im-note'; disc.textContent = FOOTER_DISC; bodyEl.appendChild(disc);
     bodyEl.scrollTop = bodyEl.scrollHeight;
   };
 

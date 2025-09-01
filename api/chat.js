@@ -27,7 +27,7 @@ const SYSTEM = `You are the Intelligent Molecules on-site concierge. Use only th
 Guardrails:
 - No medical advice. Avoid disease/treatment claims.
 - For pregnancy/breastfeeding or prescription meds (e.g., SSRIs/SNRIs/MAOIs, stimulants, anticoagulants, seizure, diabetes, thyroid, oral contraceptives), do not advise; suggest speaking with a clinician and offer human support.
-- Always append: "These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure or prevent any disease."
+- Do not include FDA/DSHEA disclaimers; the UI handles this.
 Voice: calm, science-forward, friendly. Keep answers short, with bullets when helpful.`;
 
 export default async function handler(req, res) {
@@ -64,9 +64,7 @@ export default async function handler(req, res) {
     // sources metadata for the UI
 const sources = scored.map(d => ({ id: d.id, url: d.url, score: +d.score.toFixed(3) }));
 
-const DISCLAIMER =
-  "These statements have not been evaluated by the Food and Drug Administration. " +
-  "This product is not intended to diagnose, treat, cure or prevent any disease.";
+// Disclaimer is rendered in the UI; do not append here.
 
 const chatResp = await fetch('https://api.openai.com/v1/chat/completions', {
   method: 'POST',
@@ -92,7 +90,7 @@ Instructions:
 - Answer briefly (2–4 sentences) using ONLY the Context.
 - If the info isn’t in Context, say you don’t have it and invite the user to email info@intelligentmolecules.com.
 - Do NOT provide medical advice or disease claims.
-- End with the DSHEA disclaimer verbatim.`
+- Do NOT add an FDA/DSHEA disclaimer; the UI displays it.`
       }
     ]
   })
@@ -103,11 +101,6 @@ let answer = jr.choices?.[0]?.message?.content?.trim() || '';
 
 if (!answer) {
   return res.json({ answer: "Sorry, I couldn’t generate a response.", sources });
-}
-
-// ensure disclaimer present
-if (!/these statements have not been evaluated/i.test(answer)) {
-  answer += `\n\n${DISCLAIMER}`;
 }
 
 return res.json({ answer, sources });

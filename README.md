@@ -39,5 +39,5 @@ In **Online Store → Themes → Edit code**, open `layout/theme.liquid` and pas
 - `POST /api/order` → `{ orderNumber, email }` → returns order summary
 
 ## Safety
-- No medical advice; DSHEA disclaimer appended in responses.
+- No medical advice; DSHEA disclaimer displayed in UI (not appended per message).
 - Auto-escalates meds/pregnancy/conditions to human support.
