@@ -103,6 +103,9 @@ if (!answer) {
   return res.json({ answer: "Sorry, I couldn’t generate a response.", sources });
 }
 
+// Remove Markdown bold markers (**bold**) from responses
+answer = answer.replace(/\*\*/g, '');
+
 return res.json({ answer, sources });
 
 
