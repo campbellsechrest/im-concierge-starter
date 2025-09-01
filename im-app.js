@@ -39,7 +39,7 @@
       <input id="chatInput" class="input" placeholder="Ask about timing, stacking, safety…"/>
       <button id="chatSend" class="send">Send</button>
     </div>
-    <div class="note footer-note">Questions outside the bot? Email <a href="mailto:${BRAND_EMAIL}">${BRAND_EMAIL}</a>.</div>
+    <div class="note footer-note">The statements on this website have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure or prevent any disease.</div>
   `;
   document.body.appendChild(app);
 
