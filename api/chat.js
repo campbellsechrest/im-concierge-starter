@@ -61,18 +61,57 @@ export default async function handler(req, res) {
     const context = scored.map(d => `[${d.section}]\n${d.content}`).join('\n---\n');
     const prompt = `Context:\n${context}\n\nUser question: ${message}`;
 
-    const r = await fetch('https://api.openai.com/v1/responses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        system: SYSTEM,
-        input: prompt,
-        temperature: 0.2
-      })
-    });
-    const j = await r.json();
-    const text = j.output_text || j.choices?.[0]?.message?.content || 'Sorry, I couldn’t generate a response.';
+    // sources metadata for the UI
+const sources = scored.map(d => ({ id: d.id, url: d.url, score: +d.score.toFixed(3) }));
+
+const DISCLAIMER =
+  "These statements have not been evaluated by the Food and Drug Administration. " +
+  "This product is not intended to diagnose, treat, cure or prevent any disease.";
+
+const chatResp = await fetch('https://api.openai.com/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${OPENAI_KEY}`
+  },
+  body: JSON.stringify({
+    model: 'gpt-4o-mini',
+    temperature: 0.2,
+    max_tokens: 400,
+    messages: [
+      { role: 'system', content: SYSTEM },
+      {
+        role: 'user',
+        content:
+`Context:
+${context}
+
+User question: ${message}
+
+Instructions:
+- Answer briefly (2–4 sentences) using ONLY the Context.
+- If the info isn’t in Context, say you don’t have it and invite the user to email info@intelligentmolecules.com.
+- Do NOT provide medical advice or disease claims.
+- End with the DSHEA disclaimer verbatim.`
+      }
+    ]
+  })
+});
+
+const jr = await chatResp.json();
+let answer = jr.choices?.[0]?.message?.content?.trim() || '';
+
+if (!answer) {
+  return res.json({ answer: "Sorry, I couldn’t generate a response.", sources });
+}
+
+// ensure disclaimer present
+if (!/these statements have not been evaluated/i.test(answer)) {
+  answer += `\n\n${DISCLAIMER}`;
+}
+
+return res.json({ answer, sources });
+
 
     res.json({
       answer: text,
