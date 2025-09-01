@@ -103,6 +103,13 @@ if (!answer) {
   return res.json({ answer: "Sorry, I couldn’t generate a response.", sources });
 }
 
+// Remove email prompt only for science-focused questions
+const isScience = /\b(what\s+is\s+the\s+science\s+behind\s+a[\-‑]?minus|science\b.*a[\-‑]?minus)\b/i.test(message);
+if (isScience) {
+  const lines = answer.split('\n').filter(l => !/info@intelligentmolecules\.com/i.test(l));
+  answer = lines.join('\n').replace(/\s+$/,'').trim();
+}
+
 return res.json({ answer, sources });
 
 
