@@ -40,7 +40,7 @@
     </div>
     <div class="body" id="chatBody"></div>
     <div class="foot">
-      <input id="chatInput" class="input" placeholder="How can we help?"/>
+      <input id="chatInput" class="input" placeholder="What is A-Minus?"/>
       <button id="chatSend" class="send">Send</button>
     </div>
     <div class="note footer-note">The statements on this website have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure or prevent any disease.</div>
