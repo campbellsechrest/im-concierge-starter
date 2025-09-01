@@ -9,7 +9,8 @@
   body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:#e6f3ff;color:#111}
   .frame{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
   .app{display:flex;flex-direction:column;width:100%;max-width:760px;height:80vh;max-height:90vh;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.15);overflow:hidden}
-  .header{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #eee;font-weight:600}
+  .header{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #eee;font-weight:700;font-size:22px}
+  .subnote{font-size:12px;color:#6b7280;font-weight:400}
   .actions{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid #eee}
   .chip{font-size:12px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;background:#fff;cursor:pointer}
   .body{flex:1 1 auto;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:#fafafa}
@@ -29,7 +30,7 @@
   const app = document.createElement('div');
   app.className = 'app';
   app.innerHTML = `
-    <div class="header">Intelligent Molecules Concierge <span style="font-weight:400;color:#6b7280">General info only — not medical advice</span></div>
+    <div class="header">Intelligent Molecules Concierge <span class="subnote">General info only — not medical advice</span></div>
     <div class="actions">
       <span class="chip" data-q="When should I take A‑Minus?">When to take</span>
       <span class="chip" data-q="Can I take A‑Minus with my medications?">Meds & spacing</span>
