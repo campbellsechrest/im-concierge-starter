@@ -6,8 +6,9 @@
   :root{color-scheme:light}
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:#fff;color:#111}
-  .app{display:flex;flex-direction:column;height:100vh;max-height:100dvh}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:#e6f3ff;color:#111}
+  .frame{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .app{display:flex;flex-direction:column;width:100%;max-width:760px;height:80vh;max-height:90vh;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.15);overflow:hidden}
   .header{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #eee;font-weight:600}
   .actions{flex:0 0 auto;display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid #eee}
   .chip{font-size:12px;border:1px solid #e5e7eb;border-radius:999px;padding:6px 10px;background:#fff;cursor:pointer}
@@ -23,6 +24,8 @@
   `;
   const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
 
+  const frame = document.createElement('div');
+  frame.className = 'frame';
   const app = document.createElement('div');
   app.className = 'app';
   app.innerHTML = `
@@ -41,7 +44,8 @@
     </div>
     <div class="note footer-note">The statements on this website have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure or prevent any disease.</div>
   `;
-  document.body.appendChild(app);
+  document.body.appendChild(frame);
+  frame.appendChild(app);
 
   const bodyEl = app.querySelector('#chatBody');
   const inputEl = app.querySelector('#chatInput');
