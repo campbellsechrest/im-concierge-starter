@@ -6,7 +6,7 @@
   :root{color-scheme:light}
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:#e6f3ff;color:#111}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;background:#A7C6ED;color:#111}
   .frame{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
   .app{display:flex;flex-direction:column;width:100%;max-width:760px;height:80vh;max-height:90vh;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.15);overflow:hidden}
   .header{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #eee;font-weight:700;font-size:22px}
