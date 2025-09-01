@@ -34,7 +34,7 @@
     </div>
     <div class="im-body" id="imBody"></div>
     <div class="im-foot">
-      <input id="imInput" class="im-input" placeholder="Ask about timing, stacking, safety…"/>
+      <input id="imInput" class="im-input" placeholder="How can we help?"/>
       <button id="imSend" class="im-send">Send</button>
     </div>
     <div class="im-note" style="padding:0 12px 12px 12px;">General information only — not medical advice. Email <a href="mailto:${BRAND_EMAIL}">${BRAND_EMAIL}</a> for human support.</div>
