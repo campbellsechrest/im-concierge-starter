@@ -48,7 +48,10 @@ function writeJson(relativePath, payload) {
 }
 
 async function buildKnowledgeEmbeddings() {
-  const files = fs.readdirSync(KNOWLEDGE_DIR).filter((file) => file.endsWith('.md'));
+  const files = fs
+    .readdirSync(KNOWLEDGE_DIR)
+    .filter((file) => file.endsWith('.md'))
+    .sort();
   const docs = [];
 
   for (const file of files) {
