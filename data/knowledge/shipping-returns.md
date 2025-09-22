@@ -6,10 +6,12 @@ section: policy
 
 # Shipping & Returns
 
-**Shipping regions:** United States only  
-**Shipping speed & cost:** Standard shipping, **always free**, typically **3–4 business days**.  
+**Shipping regions:** United States only *(expansion planned)*  
+**Shipping speed & cost:** Standard shipping, **always free**, typically **3–4 business days** when ordered before 1 p.m. ET.  
 **Order processing:** Orders process within **1–2 business days** (no same‑day guarantee).  
 **Tracking:** Shopify sends tracking automatically when your order ships (watch for the shipment email).
+
+**Sales channel:** Direct‑to‑consumer **online only** (no in‑person retail yet).
 
 ## Returns & refunds — First‑order satisfaction guarantee
 - **Policy:** **100% money‑back guarantee on your first order** if you email us within **30 days of receipt** and are unsatisfied.  
@@ -23,3 +25,5 @@ section: policy
 ## Other policies
 - **Address changes / reshipments:** Edits are allowed **until fulfillment** — please email **info@intelligentmolecules.com**. Reshipments due to address errors are **at cost**.  
 - **Lost packages / theft:** **Case‑by‑case after a carrier claim only.** Contact us to initiate a claim.
+- **Bulk discounts:** Email **info@intelligentmolecules.com** with the quantity needed and we’ll respond with pricing options.  
+- **Privacy questions:** Direct customers to the Privacy Policy at `https://intelligentmolecules.com/policies/privacy-policy` for data inquiries.

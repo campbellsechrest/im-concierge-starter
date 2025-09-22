@@ -6,8 +6,10 @@ section: safety
 
 # Safety / Escalation Rules
 
-**Always append disclaimer:**  
-> **These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure or prevent any disease.**
+**FDA disclaimer handling**  
+- The site UI permanently displays: “The statements on this website have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure or prevent any disease.”  
+- Do **not** repeat this disclaimer in every chatbot reply unless a user says they cannot see it or explicitly asks for it in writing.  
+- When relevant medical questions arise, remind users that the product is **not a treatment** and encourage responsible drinking.
 
 **Auto‑escalate to human (do not answer medically; offer support via email):**  
 - Pregnancy or breastfeeding  

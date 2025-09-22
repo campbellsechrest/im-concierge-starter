@@ -7,10 +7,14 @@ section: product
 # A‑Minus — Product Facts (DSHEA‑safe)
 
 **What it is**  
-A‑Minus is a dietary supplement with **activated carbon** designed to **adsorb acetaldehyde in the gut** and help your body naturally eliminate it. It does **not** affect intoxication or blood alcohol content.
+A‑Minus is a dietary supplement powered by our **patent‑pending Activated Carbon Technology** that tunes activated carbon for **selective adsorption of acetaldehyde** in the gut. It does **not** affect intoxication or blood alcohol content.
 
 **How it works (plain English)**  
-A‑Minus uses tailored activated carbon to **selectively bind acetaldehyde in the gut**. The bound acetaldehyde is then carried through the digestive tract and eliminated during normal digestion.
+Ethanol is metabolized into acetaldehyde—a **known carcinogen** tied to near‑term hangover symptoms and long‑term health risks—before eventually becoming acetic acid. The body can only process acetaldehyde so quickly, so it builds up in the gut. A‑Minus uses tailored activated carbon to **bind the acetaldehyde before it enters the bloodstream**, helping your body eliminate it during normal digestion.
+
+**Technology notes**  
+- Activated carbon technology delivers **~20× higher acetaldehyde adsorption** versus a batch of generic activated charcoal tested by an independent lab.  
+- A‑Minus capsules contain **100% pure carbon**; think of it as an enhanced form of generic activated charcoal. The same lab found the comparison charcoal batch contained ~90% carbon, **1% hydrogen**, **0.02% nitrogen**, and **9% oxygen** impurities.
 
 **How to take**  
 - Adults take **2 capsules (1 serving)** **after** alcohol consumption (as soon as possible after the last drink) with a large glass of water.  
@@ -23,13 +27,14 @@ A‑Minus uses tailored activated carbon to **selectively bind acetaldehyde in t
 - **Medication spacing:** Leave **2 hours** between A‑Minus and other medications (prescription or OTC).
 
 **Ingredients (per 1 serving / 2 capsules)**  
-- **Activated carbon:** **700 mg** (pure)  
-- **Capsule shell:** Hydroxypropyl methylcellulose (HPMC)
+- **Activated carbon:** **700 mg** (pure, 100% carbon)  
+- **Capsule:** Hydroxypropyl methylcellulose (HPMC)
 
 **Dietary & manufacturing notes**  
 - Attributes: **100% organic**, **vegan**, **gluten‑free**, **halal**, **kosher** *(ensure labeling/certification is documented as applicable).*  
-- Made in the **United States**.  
-- **Independently batch‑tested**; manufactured in an **FDA‑registered, GMP‑compliant facility** *(supplements are not FDA‑approved).*
+- Made in the **United States** from capsules to packaging.  
+- Manufactured in an **FDA‑registered, GMP‑compliant facility** with **USP, ISO, GMP, and NSF certifications** *(supplements are not FDA‑approved).*  
+- Each batch is **independently tested** for safety, quality, and compliance.
 
 **Usage notes**  
 - Capsules are **black** in appearance due to the activated carbon.  
@@ -44,9 +49,9 @@ A‑Minus uses tailored activated carbon to **selectively bind acetaldehyde in t
 - **Possible effects:** May **temporarily darken stools**; occasionally may cause **mild GI discomfort**. Discontinue use if adverse effects occur.
 
 **Testing (public wording)**  
-- *Independent lab testing in a simulated gut environment showed A‑Minus removed **~90% of acetaldehyde within 2 minutes***.  
-- In the same setup, A‑Minus performed **~20×** better than a batch of generic activated charcoal.  
-- Full protocol available on request.
+- *A third‑party, FDA‑registered lab specializing in pharmaceutical development ran a simulated gut study showing A‑Minus removed **~90% of acetaldehyde within 2 minutes***.  
+- *In the same study, A‑Minus outperformed a batch of generic activated charcoal by **~20×**.*  
+- *Full protocol and lab report available on request.*
 
 **Required disclaimer**  
 > **These statements have not been evaluated by the Food and Drug Administration. This product is not intended to diagnose, treat, cure or prevent any disease.**
