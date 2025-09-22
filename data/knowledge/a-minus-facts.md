@@ -16,6 +16,12 @@ Ethanol is metabolized into acetaldehyde—a **known carcinogen** tied to near�
 - Activated carbon technology delivers **~20× higher acetaldehyde adsorption** versus a batch of generic activated charcoal tested by an independent lab.  
 - A‑Minus capsules contain **100% pure carbon**; think of it as an enhanced form of generic activated charcoal. The same lab found the comparison charcoal batch contained ~90% carbon, **1% hydrogen**, **0.02% nitrogen**, and **9% oxygen** impurities.
 
+**Manufacturing snapshot**  
+- Manufactured in the **United States** from raw carbon activation through final packaging.  
+- Production runs in an **FDA-registered**, **GMP-compliant** manufacturing facility audited for **cGMP**, **ISO 9001**, **ISO 13485**, and **NSF** certifications.  
+- The manufacturing facility maintains current certificates on file for **GMP**, **ISO 9001**, **ISO 13485**, and **NSF** audits; copies available on request.  
+- Each batch receives third-party verification of heavy metals, microbial safety, and label claim potency before release.
+
 **How to take**  
 - Adults take **2 capsules (1 serving)** **after** alcohol consumption (as soon as possible after the last drink) with a large glass of water.  
 - **1 serving per ~4–5 drinks** of alcohol.  
@@ -34,7 +40,9 @@ Ethanol is metabolized into acetaldehyde—a **known carcinogen** tied to near�
 - Attributes: **100% organic**, **vegan**, **gluten‑free**, **halal**, **kosher** *(ensure labeling/certification is documented as applicable).*  
 - Made in the **United States** from capsules to packaging.  
 - Manufactured in an **FDA‑registered, GMP‑compliant facility** with **USP, ISO, GMP, and NSF certifications** *(supplements are not FDA‑approved).*  
-- Each batch is **independently tested** for safety, quality, and compliance.
+- Facility audits cover **cGMP**, **ISO 9001**, **ISO 13485**, and **NSF** quality standards, ensuring consistent manufacturing controls.  
+- Each batch is **independently tested** for safety, quality, and compliance.  
+- All production happens in the **United States**, from ingredient activation to final packaging, so the supply chain stays controlled end-to-end.
 
 **Usage notes**  
 - Capsules are **black** in appearance due to the activated carbon.  
@@ -59,3 +67,9 @@ Ethanol is metabolized into acetaldehyde—a **known carcinogen** tied to near�
 **Phrases to avoid**  
 - “FDA‑approved.”  
 - Disease/treatment claims; personalized medical advice; instructions to change medication dosing; emergency/poisoning guidance.
+**Manufacturing FAQ**  
+- *Where is A-Minus manufactured?* → In the United States at our FDA-registered, GMP-certified manufacturing facility.  
+- *Where is A-Minus manufactured and what certifications does the facility have?* → All manufacturing happens in the United States at the same FDA-registered plant, which keeps GMP, ISO 9001, ISO 13485, and NSF certificates up to date.  
+- *What certifications does the facility have?* → The site maintains active GMP, ISO 9001, ISO 13485, and NSF certifications, with documentation available on request.
+
+

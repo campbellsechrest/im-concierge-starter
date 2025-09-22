@@ -1,0 +1,5 @@
+{"id":"serving-interval","question":"If I finish four drinks and already took one serving of A-Minus, when could I take another serving?","expectedDocIds":["a-minus-facts"],"expectedTopDoc":"a-minus-facts","minScore":0.23}
+{"id":"bulk-discount","question":"Do you offer bulk discounts and how do I request one?","expectedDocIds":["shipping-returns"],"expectedTopDoc":"shipping-returns","minScore":0.23}
+{"id":"manufacturing-certifications","question":"Where is A-Minus manufactured and what certifications does the facility have?","expectedDocIds":["a-minus-facts"],"expectedTopDoc":"a-minus-facts","minScore":0.24}
+{"id":"damaged-order","question":"My first order arrived damaged—what happens next?","expectedDocIds":["shipping-returns"],"expectedTopDoc":"shipping-returns","minScore":0.24}
+{"id":"sales-channel","question":"Do you sell A-Minus in physical stores or only online?","expectedDocIds":["shipping-returns"],"expectedTopDoc":"shipping-returns","minScore":0.22}

@@ -109,9 +109,21 @@ const CITATION_MIN_SCORE = 0.25; // must be >= to appear in "Based on:"
   * GREEN → RAG answer
   * YELLOW → cautious answer + invite human
   * RED → refusal + handoff
+  
   * BLACK → emergency stop
 * **Programmatic FAQ hubs** the bot can cite (SEO × CX).
 * **Internationalization** once labels/claims are approved.
 * **Build-time eval**: CI step that runs a small scenario set and fails on unsafe answers.
 
 ---
+---
+
+## Automated accuracy checks
+
+Set `OPENAI_API_KEY` and run `npm run eval:accuracy`. The runner walks every JSONL suite in `eval/` and fails when expectations break.
+
+- `eval/knowledge.jsonl` – questions that should be satisfied directly from the KB.
+- `eval/refusals.jsonl` – pregnancy/medication/emergency prompts that should trigger a refusal path.
+- `eval/edge.jsonl` – ambiguous, multi-hop, or long prompts for stress testing retrieval.
+
+Each line asserts expected doc ids, top doc, and score floors/ceilings so you can wire the check into CI. If you enable the included GitHub Action (`.github/workflows/accuracy.yml`), add an `OPENAI_API_KEY` repository secret so the ingest + eval steps can call OpenAI.

@@ -7,7 +7,8 @@
     "node": ">=18"
   },
   "scripts": {
-    "ingest": "node scripts/ingest.js"
+    "ingest": "node scripts/ingest.js",
+    "eval:accuracy": "node scripts/eval-retrieval.js"
   },
   "dependencies": {
     "gray-matter": "^4.0.3"

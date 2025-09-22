@@ -1,0 +1,5 @@
+{"id":"product-overview","question":"What is A-Minus and how does it work?","expectedDocIds":["a-minus-facts"],"expectedTopDoc":"a-minus-facts","minScore":0.25}
+{"id":"serving-guidance","question":"How many A-Minus capsules should I take after drinking and what's the daily max?","expectedDocIds":["a-minus-facts"],"expectedTopDoc":"a-minus-facts","minScore":0.27}
+{"id":"technology-differentiator","question":"What makes your activated carbon different from generic charcoal?","expectedDocIds":["a-minus-facts"],"expectedTopDoc":"a-minus-facts","minScore":0.24}
+{"id":"shipping-speed","question":"How fast is shipping if I order before 1 p.m. Eastern?","expectedDocIds":["shipping-returns"],"expectedTopDoc":"shipping-returns","minScore":0.25}
+{"id":"first-order-guarantee","question":"What is your first-order satisfaction guarantee and how do I request it?","expectedDocIds":["shipping-returns"],"expectedTopDoc":"shipping-returns","minScore":0.26}

@@ -11,7 +11,8 @@ section: policy
 **Order processing:** Orders process within **1–2 business days** (no same‑day guarantee).  
 **Tracking:** Shopify sends tracking automatically when your order ships (watch for the shipment email).
 
-**Sales channel:** Direct‑to‑consumer **online only** (no in‑person retail yet).
+**Sales channel:** Direct‑to‑consumer **online only** (no in‑person retail yet).  
+- There are no pop-ups, pharmacies, or third-party resellers listing the product right now.  
 
 ## Returns & refunds — First‑order satisfaction guarantee
 - **Policy:** **100% money‑back guarantee on your first order** if you email us within **30 days of receipt** and are unsatisfied.  
@@ -27,3 +28,9 @@ section: policy
 - **Lost packages / theft:** **Case‑by‑case after a carrier claim only.** Contact us to initiate a claim.
 - **Bulk discounts:** Email **info@intelligentmolecules.com** with the quantity needed and we’ll respond with pricing options.  
 - **Privacy questions:** Direct customers to the Privacy Policy at `https://intelligentmolecules.com/policies/privacy-policy` for data inquiries.
+
+**Sales channel details**  
+- A-Minus is sold **direct-to-consumer online only** at intelligentmolecules.com.  
+- There are **no physical retail stores, bar placements, or Amazon listings** yet—everything ships from our own fulfillment center.  
+- If someone asks “Do you sell A-Minus in stores?” the answer is no; invite them to order online and watch for future expansion updates.
+
