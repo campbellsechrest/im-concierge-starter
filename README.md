@@ -45,30 +45,50 @@ Browser (widget)
 * **DSHEA footer** appended to every answer.
 * **Citations** only for chunks that clear a citation floor.
 
-(An optional keyword-based **intent router** can sit before RAG to deterministically route RED/BLACK cases to refusal; see “Roadmap”.)
+(A layered intent router now sits before RAG to deterministically handle safety refusal triggers and route high-confidence intents; see “Layered intent router”.)
 
 ---
 
 ## Repo layout
 
-```
+````
 api/
-  chat.js          # RAG answer endpoint (Chat Completions; DSHEA; citations)
+  chat.js          # Layered router + RAG answer endpoint
   order.js         # (Optional) Shopify order-status endpoint (read_orders)
 data/
   knowledge/
     a-minus-facts.md
     safety-disclaimers.md
     shipping-returns.md
-  embeddings.json  # Vector index (committed for sandbox, see below)
-scripts/
-  ingest.js        # Build embeddings.json from /data/knowledge/*.md
+  embeddings.json      # Vector index for knowledge docs
+  router-intents.json  # Cached intent exemplars for semantic routing
+  router-safety.json   # Cached refusal exemplars for safety gating
 im-assistant.js    # Embeddable widget (vanilla JS)
+router/
+  intents.json     # Intent definitions + thresholds
+  safety.json      # Refusal exemplars for safety gating
+scripts/
+  ingest.js        # Builds embeddings + router caches
 test.html          # Sandbox page (no Shopify theme needed)
 vercel.json        # Bundle data/** into serverless functions
 package.json
 README.md
 ```
+
+---
+
+## Layered intent router
+
+The chat endpoint runs a layered router before RAG to keep refusals deterministic and steer confident intents:
+
+1. **Pre-normalize** — lowercase, trim, collapse whitespace (hook ready for spell-fix or PII scrubbing).
+2. **Safety regex** — hard-stop emergencies, pregnancy, prescriptions, or under-age wording with scripted refusals.
+3. **Safety embed gate** — compare the normalized query against `router-safety.json`; refuse if cosine ≥ `ROUTER_SAFETY_THRESHOLD` (default 0.42).
+4. **Business regex router** — deterministic keywords for shipping/returns/order/product intents, pulling scope/response metadata from `router/intents.json`.
+5. **Semantic intent router** — embed once, score against per-intent exemplars from `router-intents.json`; route when scores clear intent thresholds.
+6. **Fallback RAG** — if no layer wins, run retrieval normally (optionally narrowed to docs in the routed scope).
+
+Every response now includes a `routing` object describing which layer fired, so you can audit behavior in the UI or logs.
 
 ---
 
@@ -104,16 +124,8 @@ const CITATION_MIN_SCORE = 0.25; // must be >= to appear in "Based on:"
 
 ## Roadmap / nice-to-haves
 
-* **Intent router** (pre-RAG): lightweight rules (or tiny classifier) to route:
-
-  * GREEN → RAG answer
-  * YELLOW → cautious answer + invite human
-  * RED → refusal + handoff
-  
-  * BLACK → emergency stop
 * **Programmatic FAQ hubs** the bot can cite (SEO × CX).
 * **Internationalization** once labels/claims are approved.
-* **Build-time eval**: CI step that runs a small scenario set and fails on unsafe answers.
 
 ---
 ---
@@ -127,3 +139,4 @@ Set `OPENAI_API_KEY` and run `npm run eval:accuracy`. The runner walks every JSO
 - `eval/edge.jsonl` – ambiguous, multi-hop, or long prompts for stress testing retrieval.
 
 Each line asserts expected doc ids, top doc, and score floors/ceilings so you can wire the check into CI. If you enable the included GitHub Action (`.github/workflows/accuracy.yml`), add an `OPENAI_API_KEY` repository secret so the ingest + eval steps can call OpenAI.
+Run `npm run ingest` whenever you edit knowledge or router configs so the cached embeddings stay in sync before running the eval.

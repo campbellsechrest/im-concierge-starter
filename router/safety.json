@@ -1,0 +1,62 @@
+[
+  {
+    "id": "emergency-chest-pain",
+    "category": "emergency",
+    "text": "I drank too much and now my chest hurts. What should I do?",
+    "response": "I'm really sorry you're feeling unwell. I'm not a medical professional, but symptoms like this need immediate care. Please call 911 or your local emergency number right away. Once you're safe, email info@intelligentmolecules.com and the team can follow up."
+  },
+  {
+    "id": "emergency-alcohol-poisoning",
+    "category": "emergency",
+    "text": "My friend has alcohol poisoning. How do we treat it at home?",
+    "response": "I'm really sorry you're feeling unwell. I'm not a medical professional, but symptoms like this need immediate care. Please call 911 or your local emergency number right away. Once you're safe, email info@intelligentmolecules.com and the team can follow up."
+  },
+  {
+    "id": "emergency-overdose",
+    "category": "emergency",
+    "text": "I overdosed on alcohol and feel dizzy and nauseous. Any advice?",
+    "response": "I'm really sorry you're feeling unwell. I'm not a medical professional, but symptoms like this need immediate care. Please call 911 or your local emergency number right away. Once you're safe, email info@intelligentmolecules.com and the team can follow up."
+  },
+  {
+    "id": "pregnancy-pregnant",
+    "category": "pregnancy",
+    "text": "I'm pregnant. Is it safe to take A-Minus?",
+    "response": "I’m not able to advise on using A-Minus while pregnant, trying to conceive, or breastfeeding. It hasn’t been studied for those situations, so please discuss it with your healthcare professional and email info@intelligentmolecules.com if you’d like a teammate to follow up."
+  },
+  {
+    "id": "pregnancy-ttc",
+    "category": "pregnancy",
+    "text": "We are trying to conceive. Can I keep taking A-Minus?",
+    "response": "I’m not able to advise on using A-Minus while pregnant, trying to conceive, or breastfeeding. It hasn’t been studied for those situations, so please discuss it with your healthcare professional and email info@intelligentmolecules.com if you’d like a teammate to follow up."
+  },
+  {
+    "id": "pregnancy-breastfeeding",
+    "category": "pregnancy",
+    "text": "Is A-Minus safe while breastfeeding or pumping?",
+    "response": "I’m not able to advise on using A-Minus while pregnant, trying to conceive, or breastfeeding. It hasn’t been studied for those situations, so please discuss it with your healthcare professional and email info@intelligentmolecules.com if you’d like a teammate to follow up."
+  },
+  {
+    "id": "meds-ssri",
+    "category": "medication",
+    "text": "Can I take A-Minus with my SSRI medication?",
+    "response": "I can’t provide guidance on combining A-Minus with prescription or OTC medicines. Please check with your doctor or pharmacist, and feel free to email info@intelligentmolecules.com so a human can help."
+  },
+  {
+    "id": "meds-blood-thinner",
+    "category": "medication",
+    "text": "I'm on blood thinners like warfarin. Can I still use A-Minus?",
+    "response": "I can’t provide guidance on combining A-Minus with prescription or OTC medicines. Please check with your doctor or pharmacist, and feel free to email info@intelligentmolecules.com so a human can help."
+  },
+  {
+    "id": "meds-adhd",
+    "category": "medication",
+    "text": "Does A-Minus interact with Adderall or Vyvanse?",
+    "response": "I can’t provide guidance on combining A-Minus with prescription or OTC medicines. Please check with your doctor or pharmacist, and feel free to email info@intelligentmolecules.com so a human can help."
+  },
+  {
+    "id": "underage",
+    "category": "underage",
+    "text": "I'm 17 and drink sometimes. Can I take A-Minus?",
+    "response": "A-Minus is only for adults of legal drinking age. I’m not able to help here, but you can reach the team at info@intelligentmolecules.com if you have other questions."
+  }
+]

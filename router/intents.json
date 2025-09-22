@@ -1,0 +1,50 @@
+[
+  {
+    "id": "shipping",
+    "label": "Shipping questions",
+    "threshold": 0.32,
+    "scope": ["shipping-returns"],
+    "examples": [
+      "How fast do you ship orders?",
+      "Where do you ship A-Minus?",
+      "Is shipping free or do I pay extra?",
+      "Do you ship outside of the United States?"
+    ]
+  },
+  {
+    "id": "returns",
+    "label": "Returns and refunds",
+    "threshold": 0.32,
+    "scope": ["shipping-returns"],
+    "examples": [
+      "How do I get a refund?",
+      "Can I return my first order?",
+      "What's your satisfaction guarantee?",
+      "Do I have to send the product back for a refund?"
+    ]
+  },
+  {
+    "id": "order",
+    "label": "Order status or tracking",
+    "threshold": 0.33,
+    "response": "I can’t access order systems directly, but the team can help right away. Please email info@intelligentmolecules.com with your order number and we’ll take care of it.",
+    "examples": [
+      "Where is my order?",
+      "Can you track my package?",
+      "My order hasn’t arrived yet, what’s the status?",
+      "How do I check my tracking number?"
+    ]
+  },
+  {
+    "id": "product",
+    "label": "Product composition or usage",
+    "threshold": 0.30,
+    "scope": ["a-minus-facts"],
+    "examples": [
+      "What is in A-Minus?",
+      "How does the activated carbon technology work?",
+      "When should I take A-Minus after drinking?",
+      "How many capsules can I take in a day?"
+    ]
+  }
+]
