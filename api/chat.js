@@ -450,7 +450,7 @@ export default async function handler(req, res) {
     const scored = docsToScore
       .map((doc) => ({ ...doc, score: cosine(qEmbedding, doc.embedding) }))
       .sort((a, b) => b.score - a.score)
-      .slice(0, 4);
+      .slice(0, 3);
 
     const context = scored.map((doc) => `[${doc.section}]\n${doc.content}`).join('\n---\n');
 
