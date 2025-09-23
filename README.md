@@ -1,21 +1,23 @@
 # ⚛️ Intelligent Molecules Concierge
 
-A small, Retrieval-Augmented Generation chatbot designed with specific safety guardrails for Intelligent Molecules. It answers from a single source-of-truth and refuses anything outside its scope, while still maintaining the conversationalism and helpfulness of ChatGPT.
+An AI chatbot with layered intent routing and retrieval-augmented generation (RAG), designed with specific safety guardrails for a supplement brand. It provides evidence-backed answers from a curated knowledge base while maintaining strict safety boundaries to ensure FDA and DSHEA compliance.
 
-* **Tech Stack**:  OpenAI, Vercel, Node.js serverless, vanilla JS widget
-* **Highlights**: evidence-first answers, deterministic guardrails, human escalation
+* **Tech Stack**: OpenAI, Vercel, Node.js serverless, vanilla JS widget
+* **Highlights**: Layered intent routing, deterministic safety guardrails, automated accuracy testing, human escalation
 
 ---
 
-## What this is
+## What it is
 
-A **RAG** concierge for the Intelligent Molecules
+A **multi-layer AI assistant** that:
 
-* Answers timing/dosage/stacking, safety positioning, shipping/returns
-* Refuses medical advice (medications, pregnancy, conditions) with a warm, consistent handoff
-* Embeddable Shopify widget that connects to API for order info
+* Answers questions about the product (timing/dosage/stacking), science behind it, orders, and shipping/returns
+* Routes queries through deterministic safety filters before any AI processing
+* Refuses medical advice (medications, pregnancy, conditions) with consistent handoffs
+* Maintains audit trails with routing metadata for every response and runs automated evals with every deployment
+* Integrates with Shopify
 
-Why RAG (not a “plain” chatbot)? Because we want **auditable, source-backed** answers—or a friendly refusal—every time.
+Why layered routing + RAG? Because we need **deterministic safety behavior** for regulated content, plus **auditable, source-backed** answers for everything else.
 
 ---
 
@@ -24,119 +26,283 @@ Why RAG (not a “plain” chatbot)? Because we want **auditable, source-backed*
 ```
 Browser (widget)
    ↓
-/api/chat  (Vercel function)         /api/order  (Vercel function)
-   │                                    │
-   ├─ Embed question → vector           └─ Shopify Admin API (read_orders)
-   ├─ Compare to embedded SSoT chunks
-   ├─ Select Top-K above a score gate
-   └─ Chat Completions (short answer + DSHEA + citations)
+/api/chat (Vercel function)                /api/order (Vercel function)
+   │                                          │
+   ├─ 1. Pre-normalize (lowercase, trim)      └─ Shopify Admin API (read_orders)
+   ├─ 2. Safety regex (emergency/medical advice)
+   ├─ 3. Safety embedding gate
+   ├─ 4. Business regex router (keywords)
+   ├─ 5. Semantic intent router (embeddings)
+   └─ 6. Fallback RAG retrieval
+      │
+      ├─ Embed question → vector
+      ├─ Score against knowledge corpus
+      ├─ Filter by scope + score gates
+      └─ Chat Completions (gpt-4o-mini)
 ```
 
-* **Knowledge** lives in `data/knowledge/*.md` → embedded into `data/embeddings.json`.
-* `/api/chat` retrieves top matches by **cosine similarity**, applies a **minimum score gate**, and composes a short answer via **`/v1/chat/completions`** (`gpt-4o-mini`).
-* `/api/order` (optional) fetches by `name` (order number), **verifies `email`**, returns status/tracking.
+**Layer-by-layer breakdown:**
+
+1. **Pre-normalize**: Standardize input for consistent pattern matching
+2. **Safety regex**: Hard-stop emergencies, pregnancy, prescriptions with scripted responses
+3. **Safety embedding**: Semantic safety gate using cached embeddings (`router-safety.json`)
+4. **Business regex**: Deterministic keyword routing for shipping/returns/product queries
+5. **Semantic intent**: Machine learning routing using intent exemplars (`router-intents.json`)
+6. **RAG fallback**: Traditional retrieval-augmented generation from knowledge base
+
+Most queries are handled by deterministic routers (layers 2-5) and never reach RAG. Every response includes routing metadata showing which layer fired.
 
 ---
 
 ## Safety guardrails
 
-* **No medical advice**; refuse meds/pregnancy/specific conditions; emergency queries get a **hard stop**.
-* **RAG gate:** if no doc chunk clears the similarity threshold, **don’t answer**—escalate.
-* **DSHEA footer** appended to every answer.
-* **Citations** only for chunks that clear a citation floor.
-
-(A layered intent router now sits before RAG to deterministically handle safety refusal triggers and route high-confidence intents; see “Layered intent router”.)
+* **Deterministic refusals**: Regex patterns catch emergency/pregnancy/medication queries before any AI processing
+* **Semantic safety gate**: Embedding similarity against refusal exemplars provides additional safety layer
+* **RAG scope filtering**: Intent routing can narrow retrieval to specific document sections
+* **Score gates**: Minimum similarity thresholds prevent weak/irrelevant matches
+* **Emergency escalation**: Hard stops for chest pain, poisoning, 911-type queries
+* **DSHEA compliance**: UI displays FDA disclaimer; responses avoid medical claims
 
 ---
 
-## Repo layout
+## Repo structure
 
-````
+```
+.github/workflows/
+  accuracy.yml         # CI: runs embeddings + evaluation tests
 api/
-  chat.js          # Layered router + RAG answer endpoint
-  order.js         # (Optional) Shopify order-status endpoint (read_orders)
+  chat.js             # Main endpoint: layered router + RAG
+  order.js            # Shopify order status endpoint
 data/
-  knowledge/
+  knowledge/          # Source markdown files
     a-minus-facts.md
     safety-disclaimers.md
     shipping-returns.md
-  embeddings.json      # Vector index for knowledge docs
-  router-intents.json  # Cached intent exemplars for semantic routing
-  router-safety.json   # Cached refusal exemplars for safety gating
-im-assistant.js    # Embeddable widget (vanilla JS)
+  embeddings.json     # Cached vector index for knowledge
+  router-intents.json # Cached intent exemplars for semantic routing
+  router-safety.json  # Cached refusal exemplars for safety gating
+eval/                 # Automated test suites
+  knowledge.jsonl     # Core knowledge retrieval tests
+  edge.jsonl          # Edge cases and complex queries
+  refusals.jsonl      # Safety-sensitive queries
 router/
-  intents.json     # Intent definitions + thresholds
-  safety.json      # Refusal exemplars for safety gating
+  intents.json        # Intent definitions + thresholds + scopes
+  safety.json         # Safety refusal patterns
 scripts/
-  ingest.js        # Builds embeddings + router caches
-test.html          # Sandbox page (no Shopify theme needed)
-vercel.json        # Bundle data/** into serverless functions
+  ingest.js           # Builds embeddings + router caches (with caching)
+  eval-retrieval.js   # Automated accuracy testing harness
+im-assistant.js       # Embeddable widget (vanilla JS)
+test.html            # Local development sandbox
+vercel.json          # Bundle data/** into serverless functions
 package.json
-README.md
+.env.local           # Local environment variables (create this)
 ```
+
+---
+
+## Setup & development
+
+**Prerequisites:**
+- Node.js 18+
+- OpenAI API key
+
+**Local development:**
+1. Create `.env.local` with your API key:
+   ```
+   OPENAI_API_KEY=your-key-here
+   ```
+
+2. Generate embeddings:
+   ```bash
+   npm run ingest
+   ```
+
+3. Test locally:
+   ```bash
+   npm run eval:accuracy
+   ```
+
+4. Deploy to Vercel with environment variables set
+
+**Required Vercel environment variables:**
+- `OPENAI_API_KEY`: For embeddings and chat completions
+- `SHOPIFY_SHOP`: For order status (optional)
+- `SHOPIFY_ADMIN_TOKEN`: For order status (optional)
+
+---
+
+## Automated testing & CI
+
+**GitHub Actions Integration:**
+- Runs automatically on pushes to `main` and pull requests
+- **Accuracy gate**: Blocks merges if retrieval tests fail
+- **Embedding consistency**: Fails if knowledge changes without regenerating embeddings
+
+**Test suites** (in `/eval/`):
+- **`knowledge.jsonl`**: Core product knowledge should retrieve correct docs
+- **`edge.jsonl`**: Complex queries and edge cases
+- **`refusals.jsonl`**: Safety-sensitive prompts should score high enough to trigger refusal routing
+
+**Running tests:**
+```bash
+# Local testing
+npm run eval:accuracy
+
+# View CI results
+gh run list --limit 5
+gh run view [run-id] --log
+```
+
+**Test format:**
+```json
+{"id":"product-overview","question":"What is A-Minus?","expectedTopDoc":"a-minus-facts","minScore":0.25}
+{"id":"pregnancy","question":"Is A-Minus safe while pregnant?","expectedDocIds":["safety"],"expectation":"refuse"}
+```
+
+Each test validates:
+- Which document should rank highest for the query
+- Minimum similarity scores required to trigger routing decisions
+- That safety queries score high enough (≥ minScore) to activate safety routing
+- That intent queries will match appropriate routing thresholds
 
 ---
 
 ## Layered intent router
 
-The chat endpoint runs a layered router before RAG to keep refusals deterministic and steer confident intents:
+The router processes queries through multiple layers before reaching RAG:
 
-1. **Pre-normalize** — lowercase, trim, collapse whitespace (hook ready for spell-fix or PII scrubbing).
-2. **Safety regex** — hard-stop emergencies, pregnancy, prescriptions, or under-age wording with scripted refusals.
-3. **Safety embed gate** — compare the normalized query against `router-safety.json`; refuse if cosine ≥ `ROUTER_SAFETY_THRESHOLD` (default 0.42).
-4. **Business regex router** — deterministic keywords for shipping/returns/order/product intents, pulling scope/response metadata from `router/intents.json`.
-5. **Semantic intent router** — embed once, score against per-intent exemplars from `router-intents.json`; route when scores clear intent thresholds.
-6. **Fallback RAG** — if no layer wins, run retrieval normally (optionally narrowed to docs in the routed scope).
+**1. Pre-normalization**
+- Lowercase, trim whitespace, collapse spaces
+- Hook point for spell-check or PII scrubbing
 
-Every response now includes a `routing` object describing which layer fired, so you can audit behavior in the UI or logs.
+**2. Safety regex** (hard stops)
+- Emergency keywords: `911`, `chest pain`, `poisoning`, `overdose`
+- Pregnancy/fertility: `pregnant`, `breastfeeding`, `trying to conceive`
+- Prescription medications: `SSRI`, `blood thinner`, etc.
+- Returns scripted refusal without AI processing
 
----
+**3. Safety embedding gate**
+- Embeds normalized query once
+- Compares against cached refusal exemplars (`router-safety.json`)
+- Refuses if similarity ≥ `ROUTER_SAFETY_THRESHOLD` (default 0.42)
 
-## Retrieval tuning (scores, Top-K, gates)
+**4. Business regex router**
+- Deterministic keyword matching for common intents
+- Maps to response templates in `router/intents.json`
+- Can provide immediate responses or set scope for RAG
 
-Inside `api/chat.js` you’ll find (or can add) the knobs:
+**5. Semantic intent router**
+- Uses cached query embedding from step 3
+- Scores against intent exemplars (`router-intents.json`)
+- Routes when similarity ≥ intent-specific thresholds
+- Can narrow RAG scope or provide direct responses
 
-```js
-const TOP_K = 4;               // how many chunks to include
-const MIN_SCORE = 0.25;        // retrieval gate: must be >= to use in context
-const CITATION_MIN_SCORE = 0.25; // must be >= to appear in "Based on:"
+**6. RAG fallback**
+- Traditional retrieval-augmented generation
+- Filtered by scope from intent routing (if any)
+- Top-K with minimum score gates
+- GPT-4o-mini for response generation
+
+**Routing metadata:**
+Every response includes routing information:
+```json
+{
+  "answer": "...",
+  "sources": [...],
+  "routing": {
+    "layer": "safety-regex",
+    "rule": "pregnancy",
+    "category": "refusal"
+  }
+}
 ```
 
-**What they do:**
+---
 
-* **Cosine score** (≈ 0.05–0.60 typical; higher = closer) measures question↔chunk similarity.
-* **Top-K** balances coverage vs. noise (default 4).
-* **Gate** enforces “no strong evidence → no answer”.
-* **Citation floor** keeps weak matches out of the “Based on:” footnote.
+## Configuration & tuning
 
-> With a small corpus, a low-scoring chunk can still rank Top-K by **order**, but the **gate** prevents it from being **used or cited**.
+**RAG fallback behavior** (in `api/chat.js`):
+- **TOP_K = 3**: All available documents retrieved (a-minus-facts, safety, shipping-returns)
+- **No score filtering**: All documents passed to LLM regardless of similarity scores
+- **Cosine scores calculated**: Each document gets similarity score for routing decisions and audit
+- **Scores drive routing**: Used by safety gate (≥0.42) and intent thresholds throughout system
+
+**Router thresholds** (environment variables):
+```bash
+ROUTER_SAFETY_THRESHOLD=0.42        # Safety embedding gate
+ROUTER_INTENT_THRESHOLD=0.3         # Default intent threshold
+```
+
+**Intent-specific thresholds** (in `router/intents.json`):
+```json
+{
+  "id": "shipping",
+  "threshold": 0.35,
+  "scope": ["shipping-returns"],
+  "examples": ["When will my order ship?", "Tracking info"]
+}
+```
 
 ---
 
-## Security & compliance notes
+## Security & compliance
 
-* Never commit secrets. Keys live in **Vercel envs**.
-* Don’t log PII. `/api/order` verifies email and returns only status/tracking.
-* DSHEA disclaimer is appended to every answer.
-* The bot **refuses** medical advice (medications, pregnancy/breastfeeding, conditions) and emergency queries.
+* **No secrets in code**: All API keys in environment variables
+* **PII protection**: Order endpoint verifies email before returning data
+* **Audit trails**: Full routing metadata for compliance review
+* **DSHEA compliance**: UI displays required disclaimer
+* **Content filtering**: Multiple safety layers prevent medical advice
+* **Deterministic behavior**: Safety responses use scripted templates, not AI generation
+
+---
+
+## Development workflow
+
+**Adding knowledge:**
+1. Edit markdown files in `data/knowledge/`
+2. Run `npm run ingest` to rebuild embeddings
+3. Test with `npm run eval:accuracy`
+4. Add test cases to appropriate `.jsonl` file
+5. Commit everything (CI will verify embedding consistency)
+
+**Updating safety rules:**
+1. Edit `router/safety.json` for new refusal patterns
+2. Run `npm run ingest` to cache embeddings
+3. Add test cases to `eval/refusals.jsonl`
+4. Verify with `npm run eval:accuracy`
+
+**Intent routing changes:**
+1. Edit `router/intents.json` for new intent patterns
+2. Run `npm run ingest` to cache exemplar embeddings
+3. Add test cases to appropriate eval suite
+4. Test and commit
+
+**CI ensures:**
+- Embeddings stay synchronized with knowledge
+- All accuracy tests pass before merge
+- No regressions in retrieval quality
 
 ---
 
-## Roadmap / nice-to-haves
+## Monitoring & analytics
 
-* **Programmatic FAQ hubs** the bot can cite (SEO × CX).
-* **Internationalization** once labels/claims are approved.
+**Response metadata includes:**
+- Routing layer that handled the query
+- Similarity scores for retrieved documents
+- Intent classification (when applicable)
+- Source document citations
+
+**Recommended tracking:**
+- Distribution of routing layers (safety vs RAG usage)
+- Top failing test cases in CI
+- Low-scoring retrievals that might need knowledge updates
+- Frequency of human escalations
 
 ---
----
 
-## Automated accuracy checks
+## Roadmap
 
-Set `OPENAI_API_KEY` and run `npm run eval:accuracy`. The runner walks every JSONL suite in `eval/` and fails when expectations break.
-
-- `eval/knowledge.jsonl` – questions that should be satisfied directly from the KB.
-- `eval/refusals.jsonl` – pregnancy/medication/emergency prompts that should trigger a refusal path.
-- `eval/edge.jsonl` – ambiguous, multi-hop, or long prompts for stress testing retrieval.
-
-Each line asserts expected doc ids, top doc, and score floors/ceilings so you can wire the check into CI. If you enable the included GitHub Action (`.github/workflows/accuracy.yml`), add an `OPENAI_API_KEY` repository secret so the ingest + eval steps can call OpenAI.
-Run `npm run ingest` whenever you edit knowledge or router configs so the cached embeddings stay in sync before running the eval.
+* **Analytics dashboard**: Query routing and accuracy metrics
+* **A/B testing**: Router threshold optimization
+* **Advanced safety**: Context-aware refusal patterns
+* **Performance**: Response caching for common queries
