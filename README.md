@@ -291,19 +291,9 @@ ROUTER_INTENT_THRESHOLD=0.3         # Default intent threshold
 - Routing layer that handled the query
 - Similarity scores for retrieved documents
 - Intent classification (when applicable)
-- Source document citations
 
-**Recommended tracking:**
-- Distribution of routing layers (safety vs RAG usage)
+**Metrics/evals tracking:**
+- Distribution of routing layers
 - Top failing test cases in CI
 - Low-scoring retrievals that might need knowledge updates
 - Frequency of human escalations
-
----
-
-## Roadmap
-
-* **Analytics dashboard**: Query routing and accuracy metrics
-* **A/B testing**: Router threshold optimization
-* **Advanced safety**: Context-aware refusal patterns
-* **Performance**: Response caching for common queries
