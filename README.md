@@ -91,7 +91,8 @@ router/
 scripts/
   ingest.js           # Builds embeddings + router caches (with caching)
   eval-retrieval.js   # Automated accuracy testing harness
-im-assistant.js       # Embeddable widget (vanilla JS)
+im-app.js             # Full-page chat application (vanilla JS)
+im-assistant.js       # Embeddable chat bubble widget (vanilla JS)
 test.html            # Local development sandbox
 vercel.json          # Bundle data/** into serverless functions
 package.json
