@@ -236,7 +236,14 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', ORIGIN_ALLOWED);
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+
+  // Support GET for easy browser testing
+  if (req.method === 'GET') {
+    const message = req.query.message || req.query.q || 'What is A-Minus?';
+    req.body = { message };
+  } else if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'GET or POST only' });
+  }
 
   if (!OPENAI_KEY) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
 
