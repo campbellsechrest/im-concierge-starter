@@ -1,10 +1,28 @@
 import fs from 'fs';
 import path from 'path';
+import { logEvaluationResults } from '../lib/database/queries.js';
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small';
 const TOP_K_DEFAULT = Number(process.env.EVAL_TOP_K || 4);
 const EVAL_DIR = process.env.EVAL_DIR || 'eval';
+
+// Get git commit hash for tracking evaluation runs
+function getGitCommit() {
+  try {
+    const { execSync } = require('child_process');
+    const commit = execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+    return commit;
+  } catch (error) {
+    console.warn('Could not determine git commit:', error.message);
+    return null;
+  }
+}
+
+// Get deployment ID from Vercel environment
+function getDeploymentId() {
+  return process.env.VERCEL_DEPLOYMENT_ID || process.env.DEPLOYMENT_ID || null;
+}
 
 if (!OPENAI_KEY) {
   console.error('Missing OPENAI_API_KEY for evaluation');
@@ -101,6 +119,7 @@ function evaluateScenario(scenario, scored, topK) {
   const report = {
     id: scenario.id,
     suite: scenario.suite,
+    question: scenario.question,
     expectation: scenario.expectation || null,
     passed: true,
     reasons: [],
@@ -237,6 +256,26 @@ async function main() {
 
   const failed = results.filter(r => !r.passed);
   console.log(`Overall: ${results.length - failed.length} passed / ${results.length} total`);
+
+  // Store evaluation results in database
+  try {
+    const gitCommit = getGitCommit();
+    const deploymentId = getDeploymentId();
+
+    console.log('Storing evaluation results in database...');
+    await logEvaluationResults(results, gitCommit, deploymentId);
+    console.log('✅ Evaluation results stored successfully');
+
+    if (gitCommit) {
+      console.log(`📝 Git commit: ${gitCommit.substring(0, 8)}`);
+    }
+    if (deploymentId) {
+      console.log(`🚀 Deployment: ${deploymentId}`);
+    }
+  } catch (error) {
+    console.warn('⚠️ Failed to store evaluation results in database:', error.message);
+    // Don't fail the evaluation if database storage fails
+  }
 
   if (failed.length) {
     process.exit(1);

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { logQuery, logRetrievalDetails } from '../lib/database/queries.js';
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const ORIGIN_ALLOWED = process.env.ORIGIN_ALLOWED || '*';
@@ -361,7 +362,24 @@ function respond(res, payload) {
   return res.json({ answer, sources, routing });
 }
 
+async function logRequestAsync(requestData) {
+  try {
+    const queryLogId = await logQuery(requestData);
+
+    // Log retrieval details if available
+    if (requestData.retrievalDetails && requestData.retrievalDetails.length > 0) {
+      await logRetrievalDetails(queryLogId, requestData.retrievalDetails);
+    }
+  } catch (error) {
+    console.error('Failed to log query to database:', error);
+    // Don't throw - logging failures shouldn't break the chat
+  }
+}
+
 export default async function handler(req, res) {
+  const startTime = Date.now();
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
   res.setHeader('Access-Control-Allow-Origin', ORIGIN_ALLOWED);
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -369,56 +387,127 @@ export default async function handler(req, res) {
 
   if (!OPENAI_KEY) return res.status(500).json({ error: 'Missing OPENAI_API_KEY' });
 
+  let userMessage = null;
+  let normalizedMessage = null;
+  let responseData = null;
+  let openaiMetadata = {};
+  let errorMessage = null;
+
   try {
     const { message } = req.body || {};
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'message required' });
     }
 
-    const normalized = normalizeMessage(message);
+    userMessage = message;
+    normalizedMessage = normalizeMessage(message);
 
     const safetyRegex = runSafetyRegex(message);
     if (safetyRegex) {
-      return respond(res, {
+      responseData = {
         answer: safetyRegex.answer,
         sources: [{ id: 'safety', url: 'https://intelligentmolecules.com/pages/faq', score: null }],
         routing: safetyRegex.routing
+      };
+
+      // Send response immediately
+      respond(res, responseData);
+
+      // Log async after response sent
+      setImmediate(() => {
+        logRequestAsync({
+          userMessage,
+          normalizedMessage,
+          responseAnswer: responseData.answer,
+          routing: responseData.routing,
+          sources: responseData.sources,
+          responseTimeMs: Date.now() - startTime,
+          openai: openaiMetadata,
+          errorMessage
+        });
       });
+
+      return;
     }
 
     const getEmbedding = (() => {
       let cached;
       return async () => {
         if (!cached) {
-          cached = await embedQuery(normalized);
+          cached = await embedQuery(normalizedMessage);
+          // Store embedding metadata for logging
+          openaiMetadata.model = 'text-embedding-3-small';
+          openaiMetadata.embeddingCacheHit = false;
+        } else {
+          openaiMetadata.embeddingCacheHit = true;
         }
         return cached;
       };
     })();
 
-    const safetyEmbed = await runSafetyEmbedding(normalized, getEmbedding);
+    const safetyEmbed = await runSafetyEmbedding(normalizedMessage, getEmbedding);
     if (safetyEmbed) {
-      return respond(res, {
+      responseData = {
         answer: safetyEmbed.answer,
         sources: [{ id: 'safety', url: 'https://intelligentmolecules.com/pages/faq', score: safetyEmbed.routing.score ?? null }],
         routing: safetyEmbed.routing
+      };
+
+      // Send response immediately
+      respond(res, responseData);
+
+      // Log async after response sent
+      setImmediate(() => {
+        logRequestAsync({
+          userMessage,
+          normalizedMessage,
+          responseAnswer: responseData.answer,
+          routing: responseData.routing,
+          sources: responseData.sources,
+          responseTimeMs: Date.now() - startTime,
+          openai: openaiMetadata,
+          embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+          errorMessage
+        });
       });
+
+      return;
     }
 
     let routing = null;
     let scope = null;
 
-    const business = runBusinessRegex(normalized);
+    const business = runBusinessRegex(normalizedMessage);
     if (business) {
       const applied = applyIntentMetadata(business.intent, 'business-regex');
       routing = applied.routing;
       scope = applied.scope;
       if (applied.response) {
-        return respond(res, {
+        responseData = {
           answer: applied.response,
           sources: [],
           routing
+        };
+
+        // Send response immediately
+        respond(res, responseData);
+
+        // Log async after response sent
+        setImmediate(() => {
+          logRequestAsync({
+            userMessage,
+            normalizedMessage,
+            responseAnswer: responseData.answer,
+            routing: responseData.routing,
+            sources: responseData.sources,
+            responseTimeMs: Date.now() - startTime,
+            openai: openaiMetadata,
+            embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+            errorMessage
+          });
         });
+
+        return;
       }
     } else {
       const semanticIntent = await runIntentEmbedding(getEmbedding);
@@ -426,11 +515,31 @@ export default async function handler(req, res) {
         routing = semanticIntent.routing;
         scope = semanticIntent.scope;
         if (semanticIntent.response) {
-          return respond(res, {
+          responseData = {
             answer: semanticIntent.response,
             sources: [],
             routing
+          };
+
+          // Send response immediately
+          respond(res, responseData);
+
+          // Log async after response sent
+          setImmediate(() => {
+            logRequestAsync({
+              userMessage,
+              normalizedMessage,
+              responseAnswer: responseData.answer,
+              routing: responseData.routing,
+              sources: responseData.sources,
+              responseTimeMs: Date.now() - startTime,
+              openai: openaiMetadata,
+              embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+              errorMessage
+            });
           });
+
+          return;
         }
       }
     }
@@ -468,32 +577,109 @@ export default async function handler(req, res) {
           { role: 'system', content: SYSTEM },
           {
             role: 'user',
-            content: `Context:\n${context}\n\nUser question: ${message}\n\nInstructions:\n- Answer briefly (2–4 sentences) using ONLY the Context.\n- If the info isn’t in Context, say you don’t have it and invite the user to email info@intelligentmolecules.com.\n- Do NOT provide medical advice or disease claims.\n- Do NOT add an FDA/DSHEA disclaimer; the UI displays it.`
+            content: `Context:\n${context}\n\nUser question: ${message}\n\nInstructions:\n- Answer briefly (2–4 sentences) using ONLY the Context.\n- If the info isn't in Context, say you don't have it and invite the user to email info@intelligentmolecules.com.\n- Do NOT provide medical advice or disease claims.\n- Do NOT add an FDA/DSHEA disclaimer; the UI displays it.`
           }
         ]
       })
     });
 
     const jr = await chatResp.json();
+
+    // Capture OpenAI metadata
+    openaiMetadata.chatModel = 'gpt-4o-mini';
+    openaiMetadata.requestId = chatResp.headers.get('openai-request-id') || null;
+    openaiMetadata.totalTokens = jr.usage?.total_tokens || null;
+
     let answer = jr.choices?.[0]?.message?.content?.trim() || '';
 
     if (!answer) {
-      return respond(res, {
-        answer: 'Sorry, I couldn’t generate a response.',
+      responseData = {
+        answer: 'Sorry, I couldn't generate a response.',
         sources: buildSources(scored, routing),
         routing: routing || { layer: 'rag', intent: null }
+      };
+
+      // Send response immediately
+      respond(res, responseData);
+
+      // Log async after response sent
+      setImmediate(() => {
+        logRequestAsync({
+          userMessage,
+          normalizedMessage,
+          responseAnswer: responseData.answer,
+          routing: responseData.routing,
+          sources: responseData.sources,
+          responseTimeMs: Date.now() - startTime,
+          openai: openaiMetadata,
+          embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+          errorMessage,
+          retrievalDetails: scored?.map((doc, index) => ({
+            documentId: doc.id,
+            documentSection: doc.section,
+            similarityScore: doc.score,
+            scopeFiltered: scope && scope.length > 0
+          }))
+        });
       });
+
+      return;
     }
 
     answer = answer.replace(/\*\*/g, '');
 
-    return respond(res, {
+    responseData = {
       answer,
       sources: buildSources(scored, routing),
       routing: routing || { layer: 'rag', intent: null }
+    };
+
+    // Send response immediately
+    respond(res, responseData);
+
+    // Log async after response sent
+    setImmediate(() => {
+      logRequestAsync({
+        userMessage,
+        normalizedMessage,
+        responseAnswer: responseData.answer,
+        routing: responseData.routing,
+        sources: responseData.sources,
+        responseTimeMs: Date.now() - startTime,
+        openai: openaiMetadata,
+        embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+        errorMessage,
+        retrievalDetails: scored?.map((doc, index) => ({
+          documentId: doc.id,
+          documentSection: doc.section,
+          similarityScore: doc.score,
+          scopeFiltered: scope && scope.length > 0
+        }))
+      });
     });
+
+    return;
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'server error' });
+    errorMessage = err.message;
+
+    const errorResponse = { error: 'server error' };
+    res.status(500).json(errorResponse);
+
+    // Log error async
+    setImmediate(() => {
+      logRequestAsync({
+        userMessage,
+        normalizedMessage,
+        responseAnswer: null,
+        routing: null,
+        sources: [],
+        responseTimeMs: Date.now() - startTime,
+        openai: openaiMetadata,
+        embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+        errorMessage
+      });
+    });
   }
 }

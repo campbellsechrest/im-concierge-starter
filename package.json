@@ -8,9 +8,11 @@
   },
   "scripts": {
     "ingest": "node scripts/ingest.js",
-    "eval:accuracy": "node scripts/eval-retrieval.js"
+    "eval:accuracy": "node scripts/eval-retrieval.js",
+    "db:migrate": "node scripts/migrate.js"
   },
   "dependencies": {
-    "gray-matter": "^4.0.3"
+    "gray-matter": "^4.0.3",
+    "@vercel/postgres": "^0.10.0"
   }
 }
