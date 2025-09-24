@@ -601,7 +601,7 @@ export default async function handler(req, res) {
 
     if (!answer) {
       responseData = {
-        answer: 'Sorry, I couldn't generate a response.',
+        answer: 'Sorry, I couldn\'t generate a response.',
         sources: buildSources(scored, routing),
         routing: routing || { layer: 'rag', intent: null }
       };
