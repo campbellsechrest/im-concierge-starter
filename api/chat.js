@@ -371,7 +371,14 @@ async function logRequestAsync(requestData) {
       await logRetrievalDetails(queryLogId, requestData.retrievalDetails);
     }
   } catch (error) {
-    console.error('Failed to log query to database:', error);
+    // Check if it's a missing table error
+    if (error.message?.includes('relation "query_logs" does not exist') ||
+        error.message?.includes('table') ||
+        error.code === '42P01') {
+      console.warn('Database tables not created yet. Run /api/migrate to create tables.');
+    } else {
+      console.error('Failed to log query to database:', error.message);
+    }
     // Don't throw - logging failures shouldn't break the chat
   }
 }
