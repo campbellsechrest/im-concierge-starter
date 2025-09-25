@@ -1,8 +1,9 @@
 import { getConnection, testConnection, getCurrentEnvironment } from '../lib/database/connection.js';
+import { withAutoMigration } from '../lib/database/api-middleware.js';
 
 const ORIGIN_ALLOWED = process.env.ORIGIN_ALLOWED || '*';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', ORIGIN_ALLOWED);
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Content-Type', 'application/json');
@@ -115,3 +116,9 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// Export handler wrapped with auto-migration
+export default withAutoMigration(handler, {
+  requireMigrations: true,
+  migrationTimeout: 15000 // 15 seconds timeout for health check
+});

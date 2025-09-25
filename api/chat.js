@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { logQuery, logRetrievalDetails, logRoutingDecisions } from '../lib/database/queries.js';
+import { withAutoMigration } from '../lib/database/api-middleware.js';
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const ORIGIN_ALLOWED = process.env.ORIGIN_ALLOWED || '*';
@@ -621,7 +622,7 @@ class LayerTimer {
   }
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   const startTime = Date.now();
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   const layerTimer = new LayerTimer();
@@ -1095,3 +1096,9 @@ export default async function handler(req, res) {
     });
   }
 }
+
+// Export handler wrapped with auto-migration
+export default withAutoMigration(handler, {
+  requireMigrations: true,
+  migrationTimeout: 15000 // 15 seconds timeout for chat API
+});
