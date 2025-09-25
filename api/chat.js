@@ -147,7 +147,11 @@ let safetyRouter;
 let intentRouter;
 
 function normalizeMessage(message = '') {
-  return message.toLowerCase().replace(/\s+/g, ' ').trim();
+  return message
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[\u2010-\u2015\u2212\uFE63\uFF0D]/g, '-') // Normalize various hyphen/dash characters to regular hyphen
+    .trim();
 }
 
 function loadJsonCache(cacheRef, filePath) {
@@ -263,7 +267,12 @@ async function runSafetyEmbedding(normalizedMessage, getEmbedding) {
     /stack.*a-?minus/i,
     /a-?minus.*with.*supplement/i,
     /spacing.*a-?minus/i,
-    /hours.*apart/i
+    /hours.*apart/i,
+    /what.*stack.*a-?minus/i,
+    /can.*stack.*a-?minus/i,
+    /a-?minus.*stack/i,
+    /combine.*a-?minus/i,
+    /a-?minus.*combine/i
   ];
 
   // If the query is asking for product information/science, skip safety embedding check
