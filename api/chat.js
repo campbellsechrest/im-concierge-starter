@@ -18,17 +18,19 @@ const SAFETY_REGEX_RULES = [
     name: 'emergency',
     patterns: [
       /\b911\b/i,
-      /emergency/i,
-      /chest pain/i,
-      /shortness of breath/i,
-      /trouble breathing/i,
-      /faint(ing)?/i,
-      /pass(ing)? out/i,
-      /unconscious/i,
-      /seizure/i,
-      /poison(ing)?/i,
-      /overdose/i,
-      /alcohol poisoning/i
+      /\bemergency\b/i,
+      /\bchest pain\b/i,
+      /\bshortness of breath\b/i,
+      /\btrouble breathing\b/i,
+      /\bfaint(ing)?\b/i,
+      /\bpass(ing)? out\b/i,
+      /\bunconscious\b/i,
+      /\bseizure\b/i,
+      /\bpoison(ing)?\b/i,
+      /\boverdose\b/i,
+      /\balcohol poisoning\b/i,
+      // Co-occurrence: risk symptoms + action/concern words
+      /(?=.*\b(dizzy|nauseous|vomiting|chest|faint|pain)\b)(?=.*\b(took|feel|after|help|what)\b)/i
     ],
     message: () =>
       `I'm really sorry you're feeling unwell. I'm not a medical professional, but symptoms like this need immediate care. Please contact emergency services (call 911 or your local equivalent) or poison control right away. Once you're safe, email ${HUMAN_SUPPORT_EMAIL} and the team can follow up.`,
@@ -37,54 +39,44 @@ const SAFETY_REGEX_RULES = [
   {
     name: 'pregnancy',
     patterns: [
-      /pregnan(t|cy)/i,
-      /trying to conceive/i,
-      /\bttc\b/i,
-      /ivf/i,
-      /fertility/i,
-      /postpartum/i,
-      /breastfeed(ing)?/i,
-      /nursing/i,
-      /pumping/i,
-      /newborn/i
+      // Pregnancy-related terms with action words (co-occurrence)
+      /(?=.*\b(pregnant|pregnancy|breastfeeding|nursing|ttc|trying to conceive|fertility|ivf|postpartum|pumping|newborn)\b)(?=.*\b(take|use|safe|can|should|okay)\b)/i,
+      // Direct pregnancy statements
+      /\bi am pregnant\b/i,
+      /\bi'm pregnant\b/i,
+      /\bwhile pregnant\b/i,
+      /\bif pregnant\b/i,
+      /\bduring pregnancy\b/i,
+      /\bwhile breastfeeding\b/i,
+      /\bwhile nursing\b/i
     ],
     message: () =>
-      `I’m not able to advise on using A-Minus while pregnant, trying to conceive, or breastfeeding. It hasn’t been studied for those situations, so please discuss it with your healthcare professional and email ${HUMAN_SUPPORT_EMAIL} if you’d like a teammate to follow up.`,
+      `I'm not able to advise on using A-Minus while pregnant, trying to conceive, or breastfeeding. It hasn't been studied for those situations, so please discuss it with your healthcare professional and email ${HUMAN_SUPPORT_EMAIL} if you'd like a teammate to follow up.`,
     category: 'pregnancy'
   },
   {
     name: 'medication',
     patterns: [
-      /prescription/i,
-      /medication/i,
-      /medicine/i,
-      /drug(s)?/i,
-      /ssri/i,
-      /snri/i,
-      /maoi/i,
-      /antidepressant/i,
-      /blood thinner/i,
-      /eliquis/i,
-      /xarelto/i,
-      /warfarin/i,
-      /adderall/i,
-      /vyvanse/i,
-      /benzodiazepine/i,
-      /anxiety med/i
+      // Medication interaction with A-Minus (co-occurrence + negative lookahead for general supplement questions)
+      /(?=.*\b(prescription|medication|medicine|drug|ssri|snri|maoi|antidepressant|blood thinner|eliquis|xarelto|warfarin|adderall|vyvanse|benzodiazepine|anxiety med)\b)(?=.*\b(a-?minus|with|combine|take|together|interaction|safe)\b)(?!.*\b(general|other|any|all)\s+(supplements|vitamins)\b)/i,
+      // Specific medication names with interaction terms
+      /\b(?:combine|take|mix|together with|along with|interaction|safe with).*\b(ssri|prozac|zoloft|lexapro|adderall|vyvanse|warfarin|blood thinner)\b/i,
+      /\b(ssri|prozac|zoloft|lexapro|adderall|vyvanse|warfarin|blood thinner).*\b(?:combine|take|mix|together with|along with|interaction|safe with)\b/i
     ],
     message: () =>
-      `I can’t provide guidance on combining A-Minus with prescription or OTC medicines. Please check with your doctor or pharmacist, and feel free to email ${HUMAN_SUPPORT_EMAIL} so a human can help.`,
+      `I can't provide guidance on combining A-Minus with prescription or OTC medicines. Please check with your doctor or pharmacist, and feel free to email ${HUMAN_SUPPORT_EMAIL} so a human can help.`,
     category: 'medication'
   },
   {
     name: 'underage',
     patterns: [
-      /\bi am (?:1[0-7]|under 21)\b/i,
-      /\bi'm (?:1[0-7]|under 21)\b/i,
-      /underage/i
+      /\bi am (?:1[0-7]|under (?:18|21))\b/i,
+      /\bi'm (?:1[0-7]|under (?:18|21))\b/i,
+      /\bunderage\b.*\b(?:drink|alcohol|supplement)\b/i,
+      /\b(?:16|17)\s*years?\s*old\b/i
     ],
     message: () =>
-      `A-Minus is only for adults of legal drinking age. I’m not able to help here, but you can reach the team at ${HUMAN_SUPPORT_EMAIL} if you have other questions.`,
+      `A-Minus is only for adults of legal drinking age. I'm not able to help here, but you can reach the team at ${HUMAN_SUPPORT_EMAIL} if you have other questions.`,
     category: 'underage'
   }
 ];
@@ -97,8 +89,10 @@ const BUSINESS_REGEX_RULES = [
       /\bship(ping)?\b/i,
       /\bdeliver(y|ies)?\b/i,
       /\bwhere do you ship\b/i,
-      /\bfreeshipping\b/i,
-      /\bshipping cost\b/i
+      /\bfree\s*shipping\b/i, // Handle "freeshipping" and "free shipping"
+      /\bshipping\s+cost\b/i,
+      /\bhow\s+fast.*ship\b/i,
+      /\binternational\s+shipping\b/i
     ]
   },
   {
@@ -107,42 +101,47 @@ const BUSINESS_REGEX_RULES = [
     patterns: [
       /\breturn(s)?\b/i,
       /\brefund\b/i,
-      /\bmoney back\b/i,
-      /\bsatisfaction guarantee\b/i
+      /\bmoney\s+back\b/i,
+      /\bsatisfaction\s+guarantee\b/i,
+      /\bcan\s+i\s+return\b/i,
+      /\bhow.*return\b/i
     ]
   },
   {
     name: 'order-keywords',
     intent: 'order',
     patterns: [
-      /\border status\b/i,
+      /\border\s+status\b/i,
       /\btracking\b/i,
-      /\bwhere is my order\b/i,
-      /\border number\b/i,
-      /\bwhen will my order\b/i
+      /\bwhere\s+is\s+my\s+order\b/i,
+      /\border\s+number\b/i,
+      /\bwhen\s+will\s+my\s+order\b/i,
+      /\btrack\s+my\s+(order|package)\b/i
     ]
   },
   {
     name: 'product-overview',
     intent: 'product-overview',
     patterns: [
-      /\bwhat is a-?minus\b/i,
-      /\btell me about a-?minus\b/i,
-      /\bexplain a-?minus\b/i,
+      /\bwhat\s+is\s+a-?minus\b/i,
+      /\btell\s+me\s+about\s+a-?minus\b/i,
+      /\bexplain\s+a-?minus\b/i,
       /\ba-?minus\s+(overview|summary|info|information)\b/i,
-      /\bwhat does a-?minus do\b/i
+      /\bwhat\s+does\s+a-?minus\s+do\b/i,
+      /\bdescribe\s+a-?minus\b/i
     ]
   },
   {
     name: 'product-mechanism',
     intent: 'product-mechanism',
     patterns: [
-      /\bhow does (a-?minus|it) work\b/i,
-      /\bhow.*a-?minus.*work/i,
-      /\bmechanism\b/i,
-      /\bactivated carbon.*work/i,
-      /\bscience behind a-?minus\b/i,
-      /\btechnology.*a-?minus/i
+      /\bhow\s+does\s+(a-?minus|it)\s+work\b/i,
+      /\bhow.*a-?minus.*work\b/i,
+      /\bmechanism\s+of\s+action\b/i,
+      /\bactivated\s+carbon.*work\b/i,
+      /\bscience\s+behind\s+a-?minus\b/i,
+      /\btechnology.*a-?minus\b/i,
+      /\bwhy\s+does\s+a-?minus\s+work\b/i
     ]
   },
   {
@@ -150,23 +149,25 @@ const BUSINESS_REGEX_RULES = [
     intent: 'product-ingredients',
     patterns: [
       /\bingredients?\b/i,
-      /\bwhat.*in a-?minus\b/i,
-      /\bmade of\b/i,
+      /\bwhat.*in\s+a-?minus\b/i,
+      /\bmade\s+of\b/i,
       /\bcomposition\b/i,
-      /\bcontains?\b/i
+      /\bcontains?\b/i,
+      /\bwhat's\s+in\s+a-?minus\b/i
     ]
   },
   {
     name: 'product-usage',
     intent: 'product-usage',
     patterns: [
-      /\bhow.*take a-?minus\b/i,
-      /\bwhen.*take a-?minus\b/i,
+      /\bhow.*take\s+a-?minus\b/i,
+      /\bwhen.*take\s+a-?minus\b/i,
       /\bdosage\b/i,
-      /\bserving\b/i,
+      /\bserving\s+size\b/i,
       /\bdose\b/i,
-      /\bhow many.*capsules?\b/i,
-      /\binstructions\b/i
+      /\bhow\s+many.*capsules?\b/i,
+      /\binstructions\s+for\s+(use|taking)\b/i,
+      /\bhow\s+to\s+use\s+a-?minus\b/i
     ]
   }
 ];
