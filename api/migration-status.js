@@ -1,4 +1,4 @@
-import { getMigrationStatus, resetMigrationCache } from '../lib/database/migration-manager-v2.js';
+import { getMigrationStatus, resetMigrationCache } from '../lib/database/migration-manager.js';
 
 const ORIGIN_ALLOWED = process.env.ORIGIN_ALLOWED || '*';
 
