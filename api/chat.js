@@ -244,6 +244,24 @@ async function runSafetyEmbedding(normalizedMessage, getEmbedding) {
   const router = getSafetyRouter();
   if (!router?.entries?.length) return null;
 
+  // Check if this is a product information query that should bypass safety checks
+  const productInfoPatterns = [
+    /what is the science/i,
+    /how does (a-?minus|it) work/i,
+    /what.*ingredients/i,
+    /tell me about a-?minus/i,
+    /explain.*a-?minus/i,
+    /research behind/i,
+    /mechanism of action/i,
+    /scientifically proven/i
+  ];
+
+  // If the query is asking for product information/science, skip safety embedding check
+  // to prevent false positives from "A-Minus" mentions
+  if (productInfoPatterns.some(pattern => pattern.test(normalizedMessage))) {
+    return null;
+  }
+
   const embedding = await getEmbedding();
   let best = null;
 
