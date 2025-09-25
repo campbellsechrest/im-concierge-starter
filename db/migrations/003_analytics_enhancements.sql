@@ -38,8 +38,9 @@ CREATE TABLE IF NOT EXISTS metrics_hourly (
 );
 
 -- Create composite indexes for dashboard performance
-CREATE INDEX IF NOT EXISTS idx_query_logs_hour_layer
-ON query_logs(date_trunc('hour', timestamp), routing_layer);
+-- Skip date_trunc index for now to avoid IMMUTABLE function error
+-- CREATE INDEX IF NOT EXISTS idx_query_logs_hour_layer
+-- ON query_logs(date_trunc('hour', timestamp), routing_layer);
 
 CREATE INDEX IF NOT EXISTS idx_query_logs_cost_analysis
 ON query_logs(timestamp, estimated_cost) WHERE estimated_cost IS NOT NULL;
