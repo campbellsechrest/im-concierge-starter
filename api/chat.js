@@ -545,18 +545,12 @@ function respond(res, payload) {
 }
 
 async function logRequestAsync(requestData) {
+  let queryLogId;
+
+  // Log main query first
   try {
-    const queryLogId = await logQuery(requestData);
-
-    // Log retrieval details if available
-    if (requestData.retrievalDetails && requestData.retrievalDetails.length > 0) {
-      await logRetrievalDetails(queryLogId, requestData.retrievalDetails);
-    }
-
-    // Log routing decisions if available
-    if (requestData.decisionTrace && requestData.decisionTrace.length > 0) {
-      await logRoutingDecisions(queryLogId, requestData.decisionTrace);
-    }
+    queryLogId = await logQuery(requestData);
+    console.log(`Successfully logged main query: ${queryLogId}`);
   } catch (error) {
     // Check if it's a missing table error
     if (error.message?.includes('relation "query_logs" does not exist') ||
@@ -564,9 +558,40 @@ async function logRequestAsync(requestData) {
         error.code === '42P01') {
       console.warn('Database tables not created yet. Run /api/migrate to create tables.');
     } else {
-      console.error('Failed to log query to database:', error.message);
+      console.error('Failed to log main query to database:', error.message, {
+        userMessage: requestData.userMessage?.substring(0, 100),
+        routing: requestData.routing
+      });
     }
     // Don't throw - logging failures shouldn't break the chat
+    return;
+  }
+
+  // Log retrieval details if available (separate error handling)
+  if (requestData.retrievalDetails && requestData.retrievalDetails.length > 0) {
+    try {
+      await logRetrievalDetails(queryLogId, requestData.retrievalDetails);
+      console.log(`Successfully logged ${requestData.retrievalDetails.length} retrieval details for query ${queryLogId}`);
+    } catch (error) {
+      console.error(`Failed to log retrieval details for query ${queryLogId}:`, error.message, {
+        detailsCount: requestData.retrievalDetails.length,
+        sampleDetail: requestData.retrievalDetails[0]
+      });
+      // Continue to log routing decisions even if this fails
+    }
+  }
+
+  // Log routing decisions if available (separate error handling)
+  if (requestData.decisionTrace && requestData.decisionTrace.length > 0) {
+    try {
+      await logRoutingDecisions(queryLogId, requestData.decisionTrace);
+      console.log(`Successfully logged ${requestData.decisionTrace.length} routing decisions for query ${queryLogId}`);
+    } catch (error) {
+      console.error(`Failed to log routing decisions for query ${queryLogId}:`, error.message, {
+        decisionsCount: requestData.decisionTrace.length,
+        sampleDecision: requestData.decisionTrace[0]
+      });
+    }
   }
 }
 
