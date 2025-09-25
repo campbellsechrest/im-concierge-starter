@@ -77,6 +77,9 @@ async function handleSummaryMetrics(req, res, hours) {
   const env = getCurrentEnvironment();
   const hoursInt = parseInt(hours) || 24;
 
+  // Calculate timestamp parameter to avoid INTERVAL issues
+  const cutoffTime = new Date(Date.now() - hoursInt * 60 * 60 * 1000).toISOString();
+
   const result = await db`
     SELECT
       COUNT(*) as total_queries,
@@ -88,7 +91,7 @@ async function handleSummaryMetrics(req, res, hours) {
       SUM(embedding_tokens) as total_embedding_tokens,
       SUM(chat_completion_tokens) as total_chat_tokens
     FROM query_logs
-    WHERE timestamp >= NOW() - INTERVAL '${hoursInt} hours'
+    WHERE timestamp >= ${cutoffTime}
       AND environment = ${env}
   `;
 
@@ -117,6 +120,7 @@ async function handleLayerBreakdown(req, res, hours) {
   const db = getConnection();
   const env = getCurrentEnvironment();
   const hoursInt = parseInt(hours) || 24;
+  const cutoffTime = new Date(Date.now() - hoursInt * 60 * 60 * 1000).toISOString();
 
   const result = await db`
     SELECT
@@ -126,7 +130,7 @@ async function handleLayerBreakdown(req, res, hours) {
       SUM(estimated_cost) as layer_cost,
       COUNT(CASE WHEN error_message IS NOT NULL THEN 1 END) as error_count
     FROM query_logs
-    WHERE timestamp >= NOW() - INTERVAL '${hoursInt} hours'
+    WHERE timestamp >= ${cutoffTime}
       AND environment = ${env}
       AND routing_layer IS NOT NULL
     GROUP BY routing_layer
@@ -158,6 +162,7 @@ async function handleCostAnalysis(req, res, hours) {
   const db = getConnection();
   const env = getCurrentEnvironment();
   const hoursInt = parseInt(hours) || 24;
+  const cutoffTime = new Date(Date.now() - hoursInt * 60 * 60 * 1000).toISOString();
 
   const result = await db`
     SELECT
@@ -169,7 +174,7 @@ async function handleCostAnalysis(req, res, hours) {
       COUNT(*) as queries,
       AVG(estimated_cost) as avg_cost_per_query
     FROM query_logs
-    WHERE timestamp >= NOW() - INTERVAL '${hoursInt} hours'
+    WHERE timestamp >= ${cutoffTime}
       AND environment = ${env}
       AND estimated_cost IS NOT NULL
     GROUP BY routing_layer
@@ -202,6 +207,7 @@ async function handlePerformanceMetrics(req, res, hours) {
   const db = getConnection();
   const env = getCurrentEnvironment();
   const hoursInt = parseInt(hours) || 24;
+  const cutoffTime = new Date(Date.now() - hoursInt * 60 * 60 * 1000).toISOString();
 
   // Get routing decision performance
   const perfResult = await db`
@@ -213,7 +219,7 @@ async function handlePerformanceMetrics(req, res, hours) {
       COUNT(*) as decision_count
     FROM routing_decisions rd
     JOIN query_logs ql ON rd.query_log_id = ql.id
-    WHERE ql.timestamp >= NOW() - INTERVAL '${hoursInt} hours'
+    WHERE ql.timestamp >= ${cutoffTime}
       AND ql.environment = ${env}
       AND rd.execution_time_ms IS NOT NULL
     GROUP BY rd.layer
@@ -244,6 +250,7 @@ async function handleSafetyMetrics(req, res, hours) {
   const db = getConnection();
   const env = getCurrentEnvironment();
   const hoursInt = parseInt(hours) || 24;
+  const cutoffTime = new Date(Date.now() - hoursInt * 60 * 60 * 1000).toISOString();
 
   const result = await db`
     SELECT
@@ -252,7 +259,7 @@ async function handleSafetyMetrics(req, res, hours) {
       COUNT(*) as refusal_count,
       AVG(response_time_ms) as avg_response_time
     FROM query_logs
-    WHERE timestamp >= NOW() - INTERVAL '${hoursInt} hours'
+    WHERE timestamp >= ${cutoffTime}
       AND environment = ${env}
       AND routing_layer IN ('safety-regex', 'safety-embed')
     GROUP BY routing_category, routing_rule
