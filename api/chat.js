@@ -467,7 +467,8 @@ export default async function handler(req, res) {
           sources: responseData.sources,
           responseTimeMs: Date.now() - startTime,
           openai: openaiMetadata,
-          errorMessage
+          errorMessage,
+          retrievalDetails: [] // Safety-regex doesn't do document retrieval
         });
       });
 
@@ -511,7 +512,8 @@ export default async function handler(req, res) {
           responseTimeMs: Date.now() - startTime,
           openai: openaiMetadata,
           embeddingCacheHit: openaiMetadata.embeddingCacheHit,
-          errorMessage
+          errorMessage,
+          retrievalDetails: [] // Safety-embed doesn't do document retrieval
         });
       });
 
@@ -547,7 +549,8 @@ export default async function handler(req, res) {
             responseTimeMs: Date.now() - startTime,
             openai: openaiMetadata,
             embeddingCacheHit: openaiMetadata.embeddingCacheHit,
-            errorMessage
+            errorMessage,
+            retrievalDetails: [] // Business-regex doesn't do document retrieval
           });
         });
 
@@ -579,7 +582,8 @@ export default async function handler(req, res) {
               responseTimeMs: Date.now() - startTime,
               openai: openaiMetadata,
               embeddingCacheHit: openaiMetadata.embeddingCacheHit,
-              errorMessage
+              errorMessage,
+              retrievalDetails: [] // Intent-embed doesn't do document retrieval
             });
           });
 
@@ -722,7 +726,8 @@ export default async function handler(req, res) {
         responseTimeMs: Date.now() - startTime,
         openai: openaiMetadata,
         embeddingCacheHit: openaiMetadata.embeddingCacheHit,
-        errorMessage
+        errorMessage,
+        retrievalDetails: [] // Error cases don't have document retrieval
       });
     });
   }
