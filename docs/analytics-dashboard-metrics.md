@@ -89,15 +89,61 @@ This document provides a structured specification of all available metrics from 
 
 ---
 
-## Section 6: Usage Patterns & Business Intelligence
-*Insights for content optimization and user behavior*
+## Section 6: Per-Query Trace View (Drill-Down Detail)
+*Individual query analysis - expandable detailed view for debugging and optimization*
+
+### Main Query List
+| **Backend Metric** | **API Endpoint** | **Display Label** | **Business Description** | **Suggested Visual** |
+|-------------------|------------------|-------------------|-------------------------|---------------------|
+| Recent queries | `/api/analytics` overview | **Live Activity Feed** | Most recent user interactions with basic routing info | Expandable table rows with query preview |
+| `query.id` | Query logs | **Query ID** | Unique identifier for each query (for support/debugging) | Clickable ID linking to detailed trace |
+| `query.timestamp` | Query logs | **Time** | When the query occurred | Formatted timestamp with relative time |
+| `query.userMessage` | Query logs | **User Question** | Original user input (truncated for privacy) | Text preview with expand option |
+| `query.routingLayer` | Query logs | **Final Layer** | Which routing layer handled the query | Color-coded badge |
+| `query.responseTime` | Query logs | **Response Time** | Total time to process the query | Time display with performance indicator |
+
+### Expandable Query Detail Panel
+*Detailed breakdown when user clicks on a query row*
+
+#### Header Information
+| **Backend Metric** | **API Source** | **Display Label** | **Business Description** | **Suggested Visual** |
+|-------------------|---------------|-------------------|-------------------------|---------------------|
+| `query.timestamp` | `/api/analytics?type=trace&queryId=<id>` | **Timestamp** | Full timestamp with timezone | Large timestamp display |
+| `query.userMessage` | Trace API | **Original Text** | Raw user input as entered | Text box with copy button |
+| `query.normalizedMessage` | Trace API | **Normalized Text** | Cleaned text after pre-processing | Text box showing normalization changes |
+| `query.responseAnswer` | Trace API | **Final Response** | Complete chatbot response to user | Response text with formatting |
+| `query.totalCost` | Trace API | **Query Cost** | Total OpenAI API cost for this query | Dollar amount with breakdown |
+
+#### Decision Trace Table (Core Feature)
+*Step-by-step routing decisions through all 6 layers*
+
+| **Backend Metric** | **API Source** | **Display Label** | **Business Description** | **Visual Design** |
+|-------------------|---------------|-------------------|-------------------------|-------------------|
+| `routingDecisions[].layer` | Trace API | **Layer** | Routing layer name | Color-coded layer badge with icon |
+| `routingDecisions[].rule` | Trace API | **Rule/Pattern** | Specific rule or exemplar that was evaluated | Text with tooltip explanation |
+| `routingDecisions[].score` | Trace API | **Score** | Similarity/match score (0.0 - 1.0) | Progress bar with score value |
+| `routingDecisions[].threshold` | System config | **Threshold** | Required threshold for this rule to trigger | Threshold line on progress bar |
+| `routingDecisions[].triggered` | Trace API | **Result** | Whether this layer stopped processing (true) or continued (false) | ✅ STOP (triggered) / ➡️ CONTINUE |
+| `routingDecisions[].executionTime` | Trace API | **Layer Latency** | Time spent processing this layer | Time display with performance indicator |
+| `routingDecisions[].decision` | Calculated | **Decision Logic** | Why this layer triggered or passed through | Expandable explanation text |
+
+#### Response Source Information
+| **Backend Metric** | **API Source** | **Display Label** | **Business Description** | **Suggested Visual** |
+|-------------------|---------------|-------------------|-------------------------|---------------------|
+| `sources[].id` | Trace API | **Source Document** | Which knowledge document was used (if RAG) | Document name with link |
+| `sources[].score` | Trace API | **Relevance Score** | How well the document matched the query | Score bar with color coding |
+| Template indicator | Trace API | **Response Type** | Whether response came from template or RAG generation | Badge: "Template" or "Generated" |
+
+---
+
+## Section 7: Usage Patterns & Business Intelligence
+*Aggregate insights for content optimization and user behavior*
 
 | **Backend Metric** | **API Endpoint** | **Display Label** | **Business Description** | **Suggested Visual** |
 |-------------------|------------------|-------------------|-------------------------|---------------------|
 | `totalQueries` by hour | `/api/analytics?type=summary` (time-based) | **Traffic Patterns** | When users are most active with the chatbot | Time series chart showing hourly/daily patterns |
 | `routing_intent` breakdown | Query logs analysis | **Top Question Types** | Most common user intents (dosage, shipping, product info) | Intent ranking with query examples |
 | `similarity_score` distribution | `/api/analytics?type=trace` | **Knowledge Base Match Quality** | How well knowledge documents match user questions | Score distribution histogram |
-| Recent queries | `/api/analytics` overview | **Live Activity Feed** | Most recent user interactions (anonymized) | Real-time scrolling list with routing info |
 
 ---
 
@@ -133,8 +179,91 @@ This document provides a structured specification of all available metrics from 
 - **🔴 Red**: Errors, safety blocks, and alerts
 - **⚫ Gray**: Neutral/informational metrics
 
+### **Per-Query Trace View Design Specifications**
+
+#### **Main Query Table Layout**
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ Recent Queries                                            [Search] [Filter ▼]   │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ ⏰ 2:34 PM  [REGEX]     "What are your return..." (89ms)    [+] View Details    │
+│ ⏰ 2:33 PM  [SAFETY]    "Is this safe during..." (234ms)   [+] View Details     │
+│ ⏰ 2:32 PM  [INTENT]    "How much should I take" (567ms)   [+] View Details     │
+│ ⏰ 2:31 PM  [RAG]       "Tell me about ingredients" (1.2s) [+] View Details     │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### **Expandable Detail Panel Layout**
+*When user clicks [+] View Details, row expands to show full trace*
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ Query #q_2024_1234567890                               🕐 Dec 25, 2024 2:34 PM │
+│ 💰 $0.0023 total cost                                                           │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ 📝 ORIGINAL TEXT                                                                │
+│ "What are your return policies?"                              [📋 Copy]         │
+│                                                                                 │
+│ 🔧 NORMALIZED TEXT                                                              │
+│ "what are your return policies"                                                 │
+│ Changes: Lowercased, removed punctuation                                       │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ 🎯 ROUTING DECISION TRACE                                                       │
+│                                                                                 │
+│ 1. 🛡️ SAFETY REGEX         ➡️ CONTINUE    (12ms)                               │
+│    Rule: emergency-keywords  Score: 0.05  Threshold: 0.8                      │
+│    ▸ No emergency keywords detected                                            │
+│                                                                                 │
+│ 2. 🧠 SAFETY EMBEDDING      ➡️ CONTINUE    (89ms)                              │
+│    Rule: safety-exemplars   Score: 0.15   Threshold: 0.42                     │
+│    ▸ Query similarity to safety concerns below threshold                       │
+│                                                                                 │
+│ 3. 🏷️ BUSINESS REGEX        ✅ STOP       (3ms)                                │
+│    Rule: return-keywords    Score: 1.0    Threshold: 0.9                      │
+│    ▸ Matched: "return policies" → shipping-returns template                   │
+│                                                                                 │
+│ ⚪ SEMANTIC INTENT         ⏸️ SKIPPED     (0ms)                                │
+│ ⚪ RAG FALLBACK           ⏸️ SKIPPED     (0ms)                                │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ 💬 FINAL RESPONSE                                          📄 Template Response │
+│                                                                                 │
+│ "Our return policy allows returns within 30 days of purchase...               │
+│  For more details, please visit our returns page or contact support."         │
+│                                                                                 │
+│ 📚 SOURCE: shipping-returns-template                                          │
+│ 🎯 CONFIDENCE: High (exact keyword match)                                     │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### **Color Coding System for Trace View**
+| **Element** | **Color** | **Icon** | **Meaning** |
+|-------------|-----------|----------|-------------|
+| SAFETY REGEX | 🟢 Green | 🛡️ | Deterministic safety filter (efficient) |
+| SAFETY EMBEDDING | 🔵 Blue | 🧠 | AI-powered safety check (moderate cost) |
+| BUSINESS REGEX | 🟢 Green | 🏷️ | Keyword-based routing (efficient) |
+| SEMANTIC INTENT | 🔵 Blue | 🎯 | AI intent classification (moderate cost) |
+| RAG FALLBACK | 🟠 Orange | 🔍 | Full AI processing (highest cost) |
+| ✅ STOP | 🟢 Green | ✅ | Layer triggered - processing stopped |
+| ➡️ CONTINUE | 🔵 Blue | ➡️ | Layer passed through - continue to next |
+| ⏸️ SKIPPED | ⚫ Gray | ⚪ | Layer not reached due to earlier trigger |
+| 🔴 ERROR | 🔴 Red | ❌ | Layer failed or encountered error |
+
+#### **Interactive Features**
+- **Expandable rows**: Click any query to see full trace
+- **Copy buttons**: Easy copying of query text for testing
+- **Tooltips**: Hover over scores/thresholds for explanations
+- **Filtering**: Filter by layer type, time range, error status
+- **Search**: Search query text or response content
+- **Export**: Export trace data for debugging/analysis
+
+#### **Performance Indicators**
+- **🟢 Fast**: <100ms per layer
+- **🟡 Moderate**: 100-500ms per layer
+- **🔴 Slow**: >500ms per layer
+- **💰 Cost indication**: $ symbols based on API cost
+
 ### **Data Refresh Strategy**
-- **Real-time**: KPI cards, error counts, live activity feed
+- **Real-time**: KPI cards, error counts, live activity feed, new query traces
 - **5-minute intervals**: Performance metrics, cost tracking
 - **Hourly**: Historical trends, usage patterns
 - **Daily**: Compliance reports, optimization insights
@@ -199,6 +328,87 @@ GET /api/analytics?type=trace&queryId=<id>
         "errorRate": "0.3"
       }
     ]
+  }
+}
+
+// Individual query trace response
+{
+  "success": true,
+  "data": {
+    "query": {
+      "id": "q_2024_1234567890",
+      "userMessage": "What are your return policies?",
+      "normalizedMessage": "what are your return policies",
+      "responseAnswer": "Our return policy allows returns within 30 days...",
+      "responseTime": 104,
+      "estimatedCost": 0.0000,
+      "timestamp": "2024-12-25T14:34:12.123Z",
+      "environment": "production"
+    },
+    "routingDecisions": [
+      {
+        "layer": "safety-regex",
+        "rule": "emergency-keywords",
+        "intent": null,
+        "category": "safety",
+        "score": 0.05,
+        "triggered": false,
+        "executionOrder": 1,
+        "executionTime": 12,
+        "apiLatency": 0
+      },
+      {
+        "layer": "safety-embed",
+        "rule": "safety-exemplars",
+        "intent": null,
+        "category": "safety",
+        "score": 0.15,
+        "triggered": false,
+        "executionOrder": 2,
+        "executionTime": 89,
+        "apiLatency": 67
+      },
+      {
+        "layer": "business-regex",
+        "rule": "return-keywords",
+        "intent": "shipping-returns",
+        "category": "business",
+        "score": 1.0,
+        "triggered": true,
+        "executionOrder": 3,
+        "executionTime": 3,
+        "apiLatency": 0
+      }
+    ],
+    "retrievalDetails": []
+  }
+}
+
+// Recent queries overview response
+{
+  "success": true,
+  "data": {
+    "recentQueries": [
+      {
+        "id": "q_2024_1234567890",
+        "userMessage": "What are your return...",
+        "routingLayer": "business-regex",
+        "responseTime": 104,
+        "cost": 0.0000,
+        "timestamp": "2024-12-25T14:34:12.123Z",
+        "hasError": false
+      },
+      {
+        "id": "q_2024_1234567889",
+        "userMessage": "Is this safe during...",
+        "routingLayer": "safety-regex",
+        "responseTime": 234,
+        "cost": 0.0000,
+        "timestamp": "2024-12-25T14:33:45.789Z",
+        "hasError": false
+      }
+    ],
+    "environment": "production"
   }
 }
 ```
