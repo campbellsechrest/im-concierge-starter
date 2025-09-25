@@ -46,19 +46,5 @@ COMMENT ON COLUMN migration_locks.lock_name IS 'Name of the lock (e.g., migratio
 COMMENT ON COLUMN migration_locks.locked_by IS 'Instance ID that acquired the lock';
 COMMENT ON COLUMN migration_locks.expires_at IS 'Lock expiration timestamp for cleanup';
 
--- Function to clean up expired locks (PostgreSQL function)
-CREATE OR REPLACE FUNCTION cleanup_expired_migration_locks()
-RETURNS INTEGER
-LANGUAGE plpgsql
-AS $$
-DECLARE
-    deleted_count INTEGER;
-BEGIN
-    DELETE FROM migration_locks
-    WHERE expires_at < NOW();
-
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-
-    RETURN deleted_count;
-END;
-$$;
+-- Note: Expired locks are cleaned up automatically in the application code
+-- to avoid complex SQL parsing issues with dollar-quoted strings
