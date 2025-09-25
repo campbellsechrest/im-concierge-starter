@@ -72,6 +72,8 @@ Most queries are handled by deterministic routers (layers 2-5) and never reach R
   accuracy.yml         # CI: runs embeddings + evaluation tests
 api/
   chat.js             # Main endpoint: layered router + RAG
+  health.js           # System health & database monitoring
+  migrate.js          # Database migration endpoint
   order.js            # Shopify order status endpoint
 data/
   knowledge/          # Source markdown files
@@ -81,16 +83,24 @@ data/
   embeddings.json     # Cached vector index for knowledge
   router-intents.json # Cached intent exemplars for semantic routing
   router-safety.json  # Cached refusal exemplars for safety gating
+db/
+  migrations/
+    001_initial.sql   # Database schema: query_logs, eval_results, retrieval_details
 eval/                 # Automated test suites
   knowledge.jsonl     # Core knowledge retrieval tests
   edge.jsonl          # Edge cases and complex queries
   refusals.jsonl      # Safety-sensitive queries
+lib/
+  database/
+    connection.js     # Database connection management & health checks
+    queries.js        # Query/response logging & analytics functions
 router/
   intents.json        # Intent definitions + thresholds + scopes
   safety.json         # Safety refusal patterns
 scripts/
   ingest.js           # Builds embeddings + router caches (with caching)
   eval-retrieval.js   # Automated accuracy testing harness
+  migrate.js          # Database migration runner
 im-app.js             # Full-page chat application (vanilla JS)
 im-assistant.js       # Embeddable chat bubble widget (vanilla JS)
 test.html            # Local development sandbox
@@ -123,10 +133,23 @@ package.json
    npm run eval:accuracy
    ```
 
-4. Deploy to Vercel with environment variables set
+4. Run database migration (if needed):
+   ```bash
+   npm run db:migrate
+   ```
+
+5. Deploy to Vercel with environment variables set
+
+6. Set up database (production):
+   ```bash
+   # Create Neon database in Vercel dashboard
+   # Run migration via web endpoint
+   curl -X GET https://your-app.vercel.app/api/migrate
+   ```
 
 **Required Vercel environment variables:**
 - `OPENAI_API_KEY`: For embeddings and chat completions
+- `DATABASE_URL`: Auto-configured by Vercel Neon integration
 - `SHOPIFY_SHOP`: For order status (optional)
 - `SHOPIFY_ADMIN_TOKEN`: For order status (optional)
 
@@ -282,6 +305,38 @@ ROUTER_INTENT_THRESHOLD=0.3         # Default intent threshold
 - Embeddings stay synchronized with knowledge
 - All accuracy tests pass before merge
 - No regressions in retrieval quality
+
+---
+
+## Database & logging
+
+**Query/response logging** (PostgreSQL via Neon):
+- All user interactions automatically logged for analytics and model improvement
+- Comprehensive metadata: routing decisions, performance metrics, OpenAI usage
+- Asynchronous logging pattern - doesn't block chat responses
+- Environment-specific data separation (development/preview/production)
+
+**Database schema:**
+- **`query_logs`**: User messages, responses, routing metadata, timing, error tracking
+- **`eval_results`**: Automated test results with git commit tracking
+- **`retrieval_details`**: Document similarity scores and ranking information
+
+**Health monitoring:**
+```bash
+GET /api/health               # System health, query stats, database connectivity
+GET /api/migrate             # Database table creation and schema updates
+```
+
+**Required environment variables:**
+- `DATABASE_URL`: Auto-configured by Vercel Neon integration
+- Database supports both preview and production environments
+
+**Analytics capabilities:**
+- Query volume and response time metrics
+- Routing layer performance analysis (which layers handle which queries)
+- Error tracking and debugging
+- A/B testing support with correlation IDs
+- Evaluation harness integration for continuous model improvement
 
 ---
 
