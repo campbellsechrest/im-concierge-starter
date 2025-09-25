@@ -36,7 +36,8 @@ export default async function handler(req, res) {
     const migrationsToRun = [
       '001_initial.sql',
       '002_routing_decisions.sql',
-      '003_analytics_enhancements.sql'
+      '003_analytics_enhancements.sql',
+      '004_migration_history.sql'
     ];
 
     let allResults = [];
