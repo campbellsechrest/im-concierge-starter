@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { logQuery, logRetrievalDetails } from '../lib/database/queries.js';
+import { logQuery, logRetrievalDetails, logRoutingDecisions } from '../lib/database/queries.js';
 
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const ORIGIN_ALLOWED = process.env.ORIGIN_ALLOWED || '*';
@@ -525,6 +525,11 @@ async function logRequestAsync(requestData) {
     if (requestData.retrievalDetails && requestData.retrievalDetails.length > 0) {
       await logRetrievalDetails(queryLogId, requestData.retrievalDetails);
     }
+
+    // Log routing decisions if available
+    if (requestData.decisionTrace && requestData.decisionTrace.length > 0) {
+      await logRoutingDecisions(queryLogId, requestData.decisionTrace);
+    }
   } catch (error) {
     // Check if it's a missing table error
     if (error.message?.includes('relation "query_logs" does not exist') ||
@@ -554,6 +559,7 @@ export default async function handler(req, res) {
   let responseData = null;
   let openaiMetadata = {};
   let errorMessage = null;
+  let decisionTrace = []; // Track routing decisions for analysis
 
   try {
     const { message } = req.body || {};
@@ -566,6 +572,15 @@ export default async function handler(req, res) {
 
     // 1. Safety Regex - Fast deterministic safety checks
     const safetyRegex = runSafetyRegex(message);
+    decisionTrace.push({
+      layer: 'safety-regex',
+      rule: safetyRegex?.routing?.rule || null,
+      intent: null,
+      category: safetyRegex?.routing?.category || null,
+      score: null,
+      triggered: !!safetyRegex
+    });
+
     if (safetyRegex) {
       responseData = {
         answer: safetyRegex.answer,
@@ -587,7 +602,8 @@ export default async function handler(req, res) {
           responseTimeMs: Date.now() - startTime,
           openai: openaiMetadata,
           errorMessage,
-          retrievalDetails: [] // Safety-regex doesn't do document retrieval
+          retrievalDetails: [], // Safety-regex doesn't do document retrieval
+          decisionTrace
         });
       });
 
@@ -599,6 +615,15 @@ export default async function handler(req, res) {
     let scope = null;
 
     const business = runBusinessRegex(normalizedMessage);
+    decisionTrace.push({
+      layer: 'business-regex',
+      rule: business?.routing?.rule || null,
+      intent: business?.intent || null,
+      category: null,
+      score: null,
+      triggered: !!business
+    });
+
     if (business) {
       const applied = applyIntentMetadata(business.intent, 'business-regex');
       routing = applied.routing;
@@ -625,7 +650,8 @@ export default async function handler(req, res) {
             openai: openaiMetadata,
             embeddingCacheHit: false, // No embedding used
             errorMessage,
-            retrievalDetails: [] // Business-regex doesn't do document retrieval
+            retrievalDetails: [], // Business-regex doesn't do document retrieval
+            decisionTrace
           });
         });
 
@@ -651,6 +677,18 @@ export default async function handler(req, res) {
 
     // 4. Safety Embedding - Weighted semantic safety detection
     const safetyEmbed = await runSafetyEmbedding(normalizedMessage, getEmbedding);
+    decisionTrace.push({
+      layer: 'safety-embed',
+      rule: safetyEmbed?.routing?.rule || null,
+      intent: null,
+      category: safetyEmbed?.routing?.category || null,
+      score: safetyEmbed?.routing?.score || null,
+      triggered: !!safetyEmbed,
+      riskTokenCount: safetyEmbed?.routing?.riskTokenCount || null,
+      hasProductContext: safetyEmbed?.routing?.hasProductContext || null,
+      embeddingScore: safetyEmbed?.routing?.embeddingScore || null
+    });
+
     if (safetyEmbed) {
       responseData = {
         answer: safetyEmbed.answer,
@@ -673,7 +711,8 @@ export default async function handler(req, res) {
           openai: openaiMetadata,
           embeddingCacheHit: openaiMetadata.embeddingCacheHit,
           errorMessage,
-          retrievalDetails: [] // Safety-embed doesn't do document retrieval
+          retrievalDetails: [], // Safety-embed doesn't do document retrieval
+          decisionTrace
         });
       });
 
@@ -682,6 +721,15 @@ export default async function handler(req, res) {
 
     // 5. Intent Embedding - Semantic intent classification (reuses embedding)
     const semanticIntent = await runIntentEmbedding(getEmbedding);
+    decisionTrace.push({
+      layer: 'intent-embed',
+      rule: semanticIntent?.routing?.rule || null,
+      intent: semanticIntent?.routing?.intent || null,
+      category: null,
+      score: semanticIntent?.routing?.score || null,
+      triggered: !!semanticIntent
+    });
+
     if (semanticIntent) {
       routing = semanticIntent.routing;
       scope = semanticIntent.scope;
@@ -707,7 +755,8 @@ export default async function handler(req, res) {
               openai: openaiMetadata,
               embeddingCacheHit: openaiMetadata.embeddingCacheHit,
               errorMessage,
-              retrievalDetails: [] // Intent-embed doesn't do document retrieval
+              retrievalDetails: [], // Intent-embed doesn't do document retrieval
+              decisionTrace
             });
           });
 
@@ -721,6 +770,16 @@ export default async function handler(req, res) {
     }
 
     const corpus = getKnowledgeCorpus();
+
+    // Record RAG decision (always triggered as final fallback)
+    decisionTrace.push({
+      layer: 'rag',
+      rule: null,
+      intent: routing?.intent || null,
+      category: null,
+      score: null, // Will be updated with min score of retrieved docs
+      triggered: true
+    });
     if (!corpus?.docs?.length) {
       return res.status(500).json({ error: 'No documents available for retrieval.' });
     }
@@ -791,7 +850,8 @@ export default async function handler(req, res) {
             documentSection: doc.section,
             similarityScore: doc.score,
             scopeFiltered: scope && scope.length > 0
-          }))
+          })),
+          decisionTrace
         });
       });
 
@@ -826,7 +886,8 @@ export default async function handler(req, res) {
           documentSection: doc.section,
           similarityScore: doc.score,
           scopeFiltered: scope && scope.length > 0
-        }))
+        })),
+        decisionTrace
       });
     });
 
