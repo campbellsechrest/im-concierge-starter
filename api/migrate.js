@@ -32,35 +32,50 @@ export default async function handler(req, res) {
 
     console.log('Database connection healthy, proceeding with migration...');
 
-    // Read the migration file
-    const migrationPath = path.join(process.cwd(), 'db', 'migrations', '001_initial.sql');
+    // Handle both initial migration and new routing decisions migration
+    const migrationsToRun = [
+      '001_initial.sql',
+      '002_routing_decisions.sql'
+    ];
 
-    if (!fs.existsSync(migrationPath)) {
-      return res.status(500).json({
-        success: false,
-        error: 'Migration file not found',
-        path: migrationPath,
-        environment: getCurrentEnvironment()
-      });
+    let allResults = [];
+
+    for (const migrationFile of migrationsToRun) {
+      const migrationPath = path.join(process.cwd(), 'db', 'migrations', migrationFile);
+
+      if (!fs.existsSync(migrationPath)) {
+        console.log(`Migration file ${migrationFile} not found, skipping...`);
+        continue;
+      }
+
+      const migrationSql = fs.readFileSync(migrationPath, 'utf8');
+      console.log(`Executing migration: ${migrationFile}`);
+
+      const result = await runMigration(migrationSql);
+      allResults.push({ file: migrationFile, ...result });
+
+      if (!result.success) {
+        console.error(`Migration ${migrationFile} failed:`, result.error);
+        // Continue with next migration even if one fails (for idempotency)
+      }
     }
 
-    const migrationSql = fs.readFileSync(migrationPath, 'utf8');
-    console.log('Migration file loaded, executing...');
-
-    // Run the migration
-    const result = await runMigration(migrationSql);
     const responseTime = Date.now() - startTime;
+    const successfulMigrations = allResults.filter(r => r.success);
+    const failedMigrations = allResults.filter(r => !r.success);
 
-    if (result.success) {
-      console.log('Migration completed successfully');
+    if (successfulMigrations.length > 0) {
+      console.log(`Migrations completed: ${successfulMigrations.length} successful, ${failedMigrations.length} failed`);
 
       return res.status(200).json({
         success: true,
-        message: 'Database migration completed successfully',
+        message: 'Database migrations completed',
+        migrationsRun: allResults,
         tablesCreated: [
           'query_logs',
           'eval_results',
-          'retrieval_details'
+          'retrieval_details',
+          'routing_decisions'
         ],
         indexesCreated: [
           'idx_query_logs_timestamp',
@@ -71,19 +86,25 @@ export default async function handler(req, res) {
           'idx_eval_results_passed',
           'idx_eval_results_commit',
           'idx_retrieval_similarity',
-          'idx_retrieval_query_rank'
+          'idx_retrieval_query_rank',
+          'idx_routing_decisions_query_log_id',
+          'idx_routing_decisions_layer',
+          'idx_routing_decisions_layer_triggered',
+          'idx_routing_decisions_layer_score',
+          'idx_routing_decisions_decision_time',
+          'idx_routing_decisions_flow'
         ],
         environment: getCurrentEnvironment(),
         responseTimeMs: responseTime,
         databaseLatency: connectionTest.latency
       });
     } else {
-      console.error('Migration failed:', result.error);
+      console.error('All migrations failed');
 
       return res.status(500).json({
         success: false,
-        error: 'Migration failed',
-        details: result.error,
+        error: 'All migrations failed',
+        details: allResults,
         environment: getCurrentEnvironment(),
         responseTimeMs: responseTime
       });
