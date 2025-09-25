@@ -253,7 +253,17 @@ async function runSafetyEmbedding(normalizedMessage, getEmbedding) {
     /explain.*a-?minus/i,
     /research behind/i,
     /mechanism of action/i,
-    /scientifically proven/i
+    /scientifically proven/i,
+    /when should I take/i,
+    /when.*take.*a-?minus/i,
+    /how.*take.*a-?minus/i,
+    /timing.*a-?minus/i,
+    /dose.*a-?minus/i,
+    /dosage.*a-?minus/i,
+    /stack.*a-?minus/i,
+    /a-?minus.*with.*supplement/i,
+    /spacing.*a-?minus/i,
+    /hours.*apart/i
   ];
 
   // If the query is asking for product information/science, skip safety embedding check
