@@ -32,10 +32,11 @@ export default async function handler(req, res) {
 
     console.log('Database connection healthy, proceeding with migration...');
 
-    // Handle both initial migration and new routing decisions migration
+    // Handle all migrations in order
     const migrationsToRun = [
       '001_initial.sql',
-      '002_routing_decisions.sql'
+      '002_routing_decisions.sql',
+      '003_analytics_enhancements.sql'
     ];
 
     let allResults = [];

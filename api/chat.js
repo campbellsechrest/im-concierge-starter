@@ -9,6 +9,13 @@ const HUMAN_SUPPORT_EMAIL = 'info@intelligentmolecules.com';
 const SAFETY_THRESHOLD = Number(process.env.ROUTER_SAFETY_THRESHOLD || 0.42);
 const INTENT_FALLBACK_THRESHOLD = Number(process.env.ROUTER_INTENT_THRESHOLD || 0.3);
 
+// Cost tracking constants (OpenAI pricing as of 2024)
+const PRICING = {
+  EMBEDDING_ADA_002: 0.0001 / 1000, // $0.0001 per 1K tokens
+  GPT_4_TURBO_INPUT: 0.01 / 1000,   // $0.01 per 1K tokens
+  GPT_4_TURBO_OUTPUT: 0.03 / 1000   // $0.03 per 1K tokens
+};
+
 const EMBEDDINGS_PATH = path.join(process.cwd(), 'data', 'embeddings.json');
 const SAFETY_ROUTER_PATH = path.join(process.cwd(), 'data', 'router-safety.json');
 const INTENT_ROUTER_PATH = path.join(process.cwd(), 'data', 'router-intents.json');
@@ -562,9 +569,67 @@ async function logRequestAsync(requestData) {
   }
 }
 
+// Cost calculation helper functions
+function calculateEmbeddingCost(tokenCount) {
+  return (tokenCount || 0) * PRICING.EMBEDDING_ADA_002;
+}
+
+function calculateChatCompletionCost(inputTokens, outputTokens) {
+  const inputCost = (inputTokens || 0) * PRICING.GPT_4_TURBO_INPUT;
+  const outputCost = (outputTokens || 0) * PRICING.GPT_4_TURBO_OUTPUT;
+  return inputCost + outputCost;
+}
+
+function estimateTokenCount(text) {
+  // Rough estimation: ~4 characters per token for English text
+  return Math.ceil((text || '').length / 4);
+}
+
+// Performance tracking helpers
+class LayerTimer {
+  constructor() {
+    this.startTime = Date.now();
+    this.layerTimes = {};
+    this.apiCalls = 0;
+  }
+
+  startLayer(layerName) {
+    this.layerTimes[layerName] = { start: Date.now() };
+  }
+
+  endLayer(layerName, apiLatency = 0) {
+    if (this.layerTimes[layerName]) {
+      const executionTime = Date.now() - this.layerTimes[layerName].start;
+      this.layerTimes[layerName] = {
+        ...this.layerTimes[layerName],
+        executionTime,
+        apiLatency
+      };
+    }
+  }
+
+  incrementApiCalls() {
+    this.apiCalls++;
+  }
+
+  getTotalTime() {
+    return Date.now() - this.startTime;
+  }
+
+  getLayerTime(layerName) {
+    return this.layerTimes[layerName] || { executionTime: 0, apiLatency: 0 };
+  }
+}
+
 export default async function handler(req, res) {
   const startTime = Date.now();
   const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const layerTimer = new LayerTimer();
+
+  // Initialize cost tracking
+  let embeddingTokens = 0;
+  let chatCompletionTokens = 0;
+  let estimatedCost = 0;
 
   res.setHeader('Access-Control-Allow-Origin', ORIGIN_ALLOWED);
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -590,14 +655,19 @@ export default async function handler(req, res) {
     normalizedMessage = entityAwareNormalize(message);
 
     // 1. Safety Regex - Fast deterministic safety checks
+    layerTimer.startLayer('safety-regex');
     const safetyRegex = runSafetyRegex(message);
+    const safetyRegexTiming = layerTimer.endLayer('safety-regex');
+
     decisionTrace.push({
       layer: 'safety-regex',
       rule: safetyRegex?.routing?.rule || null,
       intent: null,
       category: safetyRegex?.routing?.category || null,
       score: null,
-      triggered: !!safetyRegex
+      triggered: !!safetyRegex,
+      executionTime: layerTimer.getLayerTime('safety-regex').executionTime,
+      apiLatency: 0 // No API calls for regex
     });
 
     if (safetyRegex) {
@@ -621,6 +691,11 @@ export default async function handler(req, res) {
           responseTimeMs: Date.now() - startTime,
           openai: openaiMetadata,
           errorMessage,
+          // Cost tracking - safety-regex has no API costs
+          embeddingTokens: 0,
+          chatCompletionTokens: 0,
+          estimatedCost: 0,
+          apiCallsCount: 0,
           retrievalDetails: [], // Safety-regex doesn't do document retrieval
           decisionTrace
         });
@@ -633,14 +708,19 @@ export default async function handler(req, res) {
     let routing = null;
     let scope = null;
 
+    layerTimer.startLayer('business-regex');
     const business = runBusinessRegex(normalizedMessage);
+    layerTimer.endLayer('business-regex');
+
     decisionTrace.push({
       layer: 'business-regex',
       rule: business?.routing?.rule || null,
       intent: business?.intent || null,
       category: null,
       score: null,
-      triggered: !!business
+      triggered: !!business,
+      executionTime: layerTimer.getLayerTime('business-regex').executionTime,
+      apiLatency: 0 // No API calls for regex
     });
 
     if (business) {
@@ -669,6 +749,11 @@ export default async function handler(req, res) {
             openai: openaiMetadata,
             embeddingCacheHit: false, // No embedding used
             errorMessage,
+            // Cost tracking - business-regex has no API costs
+            embeddingTokens: 0,
+            chatCompletionTokens: 0,
+            estimatedCost: 0,
+            apiCallsCount: 0,
             retrievalDetails: [], // Business-regex doesn't do document retrieval
             decisionTrace
           });
@@ -695,7 +780,16 @@ export default async function handler(req, res) {
     })();
 
     // 4. Safety Embedding - Weighted semantic safety detection
+    layerTimer.startLayer('safety-embed');
+    const safetyEmbedStart = Date.now();
     const safetyEmbed = await runSafetyEmbedding(normalizedMessage, getEmbedding);
+    const safetyEmbedApiLatency = Date.now() - safetyEmbedStart;
+    layerTimer.endLayer('safety-embed', safetyEmbedApiLatency);
+
+    // Track embedding token usage
+    embeddingTokens += estimateTokenCount(normalizedMessage);
+    layerTimer.incrementApiCalls();
+
     decisionTrace.push({
       layer: 'safety-embed',
       rule: safetyEmbed?.routing?.rule || null,
@@ -705,7 +799,9 @@ export default async function handler(req, res) {
       triggered: !!safetyEmbed,
       riskTokenCount: safetyEmbed?.routing?.riskTokenCount || null,
       hasProductContext: safetyEmbed?.routing?.hasProductContext || null,
-      embeddingScore: safetyEmbed?.routing?.embeddingScore || null
+      embeddingScore: safetyEmbed?.routing?.embeddingScore || null,
+      executionTime: layerTimer.getLayerTime('safety-embed').executionTime,
+      apiLatency: safetyEmbedApiLatency
     });
 
     if (safetyEmbed) {
@@ -730,6 +826,11 @@ export default async function handler(req, res) {
           openai: openaiMetadata,
           embeddingCacheHit: openaiMetadata.embeddingCacheHit,
           errorMessage,
+          // Cost tracking - safety-embed uses embedding API
+          embeddingTokens,
+          chatCompletionTokens: 0,
+          estimatedCost: calculateEmbeddingCost(embeddingTokens),
+          apiCallsCount: 1,
           retrievalDetails: [], // Safety-embed doesn't do document retrieval
           decisionTrace
         });
@@ -739,14 +840,25 @@ export default async function handler(req, res) {
     }
 
     // 5. Intent Embedding - Semantic intent classification (reuses embedding)
+    layerTimer.startLayer('intent-embed');
+    const intentEmbedStart = Date.now();
     const semanticIntent = await runIntentEmbedding(getEmbedding);
+    const intentEmbedApiLatency = Date.now() - intentEmbedStart;
+    layerTimer.endLayer('intent-embed', intentEmbedApiLatency);
+
+    // Track embedding token usage (cached or new)
+    embeddingTokens += estimateTokenCount(normalizedMessage);
+    layerTimer.incrementApiCalls();
+
     decisionTrace.push({
       layer: 'intent-embed',
       rule: semanticIntent?.routing?.rule || null,
       intent: semanticIntent?.routing?.intent || null,
       category: null,
       score: semanticIntent?.routing?.score || null,
-      triggered: !!semanticIntent
+      triggered: !!semanticIntent,
+      executionTime: layerTimer.getLayerTime('intent-embed').executionTime,
+      apiLatency: intentEmbedApiLatency
     });
 
     if (semanticIntent) {
@@ -774,6 +886,11 @@ export default async function handler(req, res) {
               openai: openaiMetadata,
               embeddingCacheHit: openaiMetadata.embeddingCacheHit,
               errorMessage,
+              // Cost tracking - intent-embed uses embedding API
+              embeddingTokens,
+              chatCompletionTokens: 0,
+              estimatedCost: calculateEmbeddingCost(embeddingTokens),
+              apiCallsCount: layerTimer.apiCalls,
               retrievalDetails: [], // Intent-embed doesn't do document retrieval
               decisionTrace
             });
@@ -790,6 +907,10 @@ export default async function handler(req, res) {
 
     const corpus = getKnowledgeCorpus();
 
+    // 6. RAG - Final fallback with document retrieval and chat completion
+    layerTimer.startLayer('rag');
+    const ragStart = Date.now();
+
     // Record RAG decision (always triggered as final fallback)
     decisionTrace.push({
       layer: 'rag',
@@ -797,7 +918,9 @@ export default async function handler(req, res) {
       intent: routing?.intent || null,
       category: null,
       score: null, // Will be updated with min score of retrieved docs
-      triggered: true
+      triggered: true,
+      executionTime: 0, // Will be updated after completion
+      apiLatency: 0 // Will be updated after completion
     });
     if (!corpus?.docs?.length) {
       return res.status(500).json({ error: 'No documents available for retrieval.' });
@@ -813,6 +936,8 @@ export default async function handler(req, res) {
 
     const context = scored.map((doc) => `[${doc.section}]\n${doc.content}`).join('\n---\n');
 
+    // Track chat completion timing and tokens
+    const chatCompletionStart = Date.now();
     const chatResp = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -834,11 +959,35 @@ export default async function handler(req, res) {
     });
 
     const jr = await chatResp.json();
+    const chatCompletionApiLatency = Date.now() - chatCompletionStart;
 
-    // Capture OpenAI metadata
+    // Track API calls and completion timing
+    layerTimer.incrementApiCalls();
+
+    // Capture OpenAI metadata and token usage
     openaiMetadata.chatModel = 'gpt-4o-mini';
     openaiMetadata.requestId = chatResp.headers.get('openai-request-id') || null;
     openaiMetadata.totalTokens = jr.usage?.total_tokens || null;
+
+    // Calculate detailed token breakdown and costs
+    chatCompletionTokens = jr.usage?.total_tokens || estimateTokenCount(context + message);
+    const promptTokens = jr.usage?.prompt_tokens || estimateTokenCount(context + message);
+    const completionTokens = jr.usage?.completion_tokens || estimateTokenCount(jr.choices?.[0]?.message?.content || '');
+
+    // End RAG layer timing
+    const ragApiLatency = ragStart ? (Date.now() - ragStart) : chatCompletionApiLatency;
+    layerTimer.endLayer('rag', ragApiLatency);
+
+    // Update RAG decision trace with timing
+    const ragDecisionIndex = decisionTrace.findIndex(d => d.layer === 'rag');
+    if (ragDecisionIndex >= 0) {
+      decisionTrace[ragDecisionIndex].executionTime = layerTimer.getLayerTime('rag').executionTime;
+      decisionTrace[ragDecisionIndex].apiLatency = ragApiLatency;
+      decisionTrace[ragDecisionIndex].score = scored?.[0]?.score || null;
+    }
+
+    // Calculate total estimated cost
+    estimatedCost = calculateEmbeddingCost(embeddingTokens) + calculateChatCompletionCost(promptTokens, completionTokens);
 
     let answer = jr.choices?.[0]?.message?.content?.trim() || '';
 
@@ -864,6 +1013,11 @@ export default async function handler(req, res) {
           openai: openaiMetadata,
           embeddingCacheHit: openaiMetadata.embeddingCacheHit,
           errorMessage,
+          // New cost tracking fields
+          embeddingTokens,
+          chatCompletionTokens,
+          estimatedCost,
+          apiCallsCount: layerTimer.apiCalls,
           retrievalDetails: scored?.map((doc, index) => ({
             documentId: doc.id,
             documentSection: doc.section,
@@ -931,6 +1085,11 @@ export default async function handler(req, res) {
         openai: openaiMetadata,
         embeddingCacheHit: openaiMetadata.embeddingCacheHit,
         errorMessage,
+        // Cost tracking - errors may have partial costs
+        embeddingTokens: embeddingTokens || 0,
+        chatCompletionTokens: chatCompletionTokens || 0,
+        estimatedCost: estimatedCost || 0,
+        apiCallsCount: layerTimer.apiCalls || 0,
         retrievalDetails: [] // Error cases don't have document retrieval
       });
     });
