@@ -706,26 +706,27 @@ async function handler(req, res) {
       // Send response immediately
       respond(res, responseData);
 
-      // Log async after response sent
-      setImmediate(() => {
-        logRequestAsync({
-          userMessage,
-          normalizedMessage,
-          responseAnswer: responseData.answer,
-          routing: responseData.routing,
-          sources: responseData.sources,
-          responseTimeMs: Date.now() - startTime,
-          openai: openaiMetadata,
-          errorMessage,
-          // Cost tracking - safety-regex has no API costs
-          embeddingTokens: 0,
-          chatCompletionTokens: 0,
-          estimatedCost: 0,
-          apiCallsCount: 0,
-          retrievalDetails: [], // Safety-regex doesn't do document retrieval
-          decisionTrace
-        });
+      // Log async after response sent - but wait for completion to prevent function termination
+      const loggingPromise = logRequestAsync({
+        userMessage,
+        normalizedMessage,
+        responseAnswer: responseData.answer,
+        routing: responseData.routing,
+        sources: responseData.sources,
+        responseTimeMs: Date.now() - startTime,
+        openai: openaiMetadata,
+        errorMessage,
+        // Cost tracking - safety-regex has no API costs
+        embeddingTokens: 0,
+        chatCompletionTokens: 0,
+        estimatedCost: 0,
+        apiCallsCount: 0,
+        retrievalDetails: [], // Safety-regex doesn't do document retrieval
+        decisionTrace
       });
+
+      // Wait for logging to complete before function can terminate
+      await loggingPromise;
 
       return;
     }
@@ -763,27 +764,28 @@ async function handler(req, res) {
         // Send response immediately
         respond(res, responseData);
 
-        // Log async after response sent
-        setImmediate(() => {
-          logRequestAsync({
-            userMessage,
-            normalizedMessage,
-            responseAnswer: responseData.answer,
-            routing: responseData.routing,
-            sources: responseData.sources,
-            responseTimeMs: Date.now() - startTime,
-            openai: openaiMetadata,
-            embeddingCacheHit: false, // No embedding used
-            errorMessage,
-            // Cost tracking - business-regex has no API costs
-            embeddingTokens: 0,
-            chatCompletionTokens: 0,
-            estimatedCost: 0,
-            apiCallsCount: 0,
-            retrievalDetails: [], // Business-regex doesn't do document retrieval
-            decisionTrace
-          });
+        // Log async after response sent - but wait for completion to prevent function termination
+        const loggingPromise = logRequestAsync({
+          userMessage,
+          normalizedMessage,
+          responseAnswer: responseData.answer,
+          routing: responseData.routing,
+          sources: responseData.sources,
+          responseTimeMs: Date.now() - startTime,
+          openai: openaiMetadata,
+          embeddingCacheHit: false, // No embedding used
+          errorMessage,
+          // Cost tracking - business-regex has no API costs
+          embeddingTokens: 0,
+          chatCompletionTokens: 0,
+          estimatedCost: 0,
+          apiCallsCount: 0,
+          retrievalDetails: [], // Business-regex doesn't do document retrieval
+          decisionTrace
         });
+
+        // Wait for logging to complete before function can terminate
+        await loggingPromise;
 
         return;
       }
@@ -840,27 +842,28 @@ async function handler(req, res) {
       // Send response immediately
       respond(res, responseData);
 
-      // Log async after response sent
-      setImmediate(() => {
-        logRequestAsync({
-          userMessage,
-          normalizedMessage,
-          responseAnswer: responseData.answer,
-          routing: responseData.routing,
-          sources: responseData.sources,
-          responseTimeMs: Date.now() - startTime,
-          openai: openaiMetadata,
-          embeddingCacheHit: openaiMetadata.embeddingCacheHit,
-          errorMessage,
-          // Cost tracking - safety-embed uses embedding API
-          embeddingTokens,
-          chatCompletionTokens: 0,
-          estimatedCost: calculateEmbeddingCost(embeddingTokens),
-          apiCallsCount: 1,
-          retrievalDetails: [], // Safety-embed doesn't do document retrieval
-          decisionTrace
-        });
+      // Log async after response sent - but wait for completion to prevent function termination
+      const loggingPromise = logRequestAsync({
+        userMessage,
+        normalizedMessage,
+        responseAnswer: responseData.answer,
+        routing: responseData.routing,
+        sources: responseData.sources,
+        responseTimeMs: Date.now() - startTime,
+        openai: openaiMetadata,
+        embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+        errorMessage,
+        // Cost tracking - safety-embed uses embedding API
+        embeddingTokens,
+        chatCompletionTokens: 0,
+        estimatedCost: calculateEmbeddingCost(embeddingTokens),
+        apiCallsCount: 1,
+        retrievalDetails: [], // Safety-embed doesn't do document retrieval
+        decisionTrace
       });
+
+      // Wait for logging to complete before function can terminate
+      await loggingPromise;
 
       return;
     }
@@ -900,27 +903,28 @@ async function handler(req, res) {
           // Send response immediately
           respond(res, responseData);
 
-          // Log async after response sent
-          setImmediate(() => {
-            logRequestAsync({
-              userMessage,
-              normalizedMessage,
-              responseAnswer: responseData.answer,
-              routing: responseData.routing,
-              sources: responseData.sources,
-              responseTimeMs: Date.now() - startTime,
-              openai: openaiMetadata,
-              embeddingCacheHit: openaiMetadata.embeddingCacheHit,
-              errorMessage,
-              // Cost tracking - intent-embed uses embedding API
-              embeddingTokens,
-              chatCompletionTokens: 0,
-              estimatedCost: calculateEmbeddingCost(embeddingTokens),
-              apiCallsCount: layerTimer.apiCalls,
-              retrievalDetails: [], // Intent-embed doesn't do document retrieval
-              decisionTrace
-            });
+          // Log async after response sent - but wait for completion to prevent function termination
+          const loggingPromise = logRequestAsync({
+            userMessage,
+            normalizedMessage,
+            responseAnswer: responseData.answer,
+            routing: responseData.routing,
+            sources: responseData.sources,
+            responseTimeMs: Date.now() - startTime,
+            openai: openaiMetadata,
+            embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+            errorMessage,
+            // Cost tracking - intent-embed uses embedding API
+            embeddingTokens,
+            chatCompletionTokens: 0,
+            estimatedCost: calculateEmbeddingCost(embeddingTokens),
+            apiCallsCount: layerTimer.apiCalls,
+            retrievalDetails: [], // Intent-embed doesn't do document retrieval
+            decisionTrace
           });
+
+          // Wait for logging to complete before function can terminate
+          await loggingPromise;
 
           return;
         }
@@ -1027,32 +1031,33 @@ async function handler(req, res) {
       // Send response immediately
       respond(res, responseData);
 
-      // Log async after response sent
-      setImmediate(() => {
-        logRequestAsync({
-          userMessage,
-          normalizedMessage,
-          responseAnswer: responseData.answer,
-          routing: responseData.routing,
-          sources: responseData.sources,
-          responseTimeMs: Date.now() - startTime,
-          openai: openaiMetadata,
-          embeddingCacheHit: openaiMetadata.embeddingCacheHit,
-          errorMessage,
-          // New cost tracking fields
-          embeddingTokens,
-          chatCompletionTokens,
-          estimatedCost,
-          apiCallsCount: layerTimer.apiCalls,
-          retrievalDetails: scored?.map((doc, index) => ({
-            documentId: doc.id,
-            documentSection: doc.section,
-            similarityScore: doc.score,
-            scopeFiltered: scope && scope.length > 0
-          })),
-          decisionTrace
-        });
+      // Log async after response sent - but wait for completion to prevent function termination
+      const loggingPromise = logRequestAsync({
+        userMessage,
+        normalizedMessage,
+        responseAnswer: responseData.answer,
+        routing: responseData.routing,
+        sources: responseData.sources,
+        responseTimeMs: Date.now() - startTime,
+        openai: openaiMetadata,
+        embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+        errorMessage,
+        // New cost tracking fields
+        embeddingTokens,
+        chatCompletionTokens,
+        estimatedCost,
+        apiCallsCount: layerTimer.apiCalls,
+        retrievalDetails: scored?.map((doc, index) => ({
+          documentId: doc.id,
+          documentSection: doc.section,
+          similarityScore: doc.score,
+          scopeFiltered: scope && scope.length > 0
+        })),
+        decisionTrace
       });
+
+      // Wait for logging to complete before function can terminate
+      await loggingPromise;
 
       return;
     }
@@ -1068,27 +1073,28 @@ async function handler(req, res) {
     // Send response immediately
     respond(res, responseData);
 
-    // Log async after response sent
-    setImmediate(() => {
-      logRequestAsync({
-        userMessage,
-        normalizedMessage,
-        responseAnswer: responseData.answer,
-        routing: responseData.routing,
-        sources: responseData.sources,
-        responseTimeMs: Date.now() - startTime,
-        openai: openaiMetadata,
-        embeddingCacheHit: openaiMetadata.embeddingCacheHit,
-        errorMessage,
-        retrievalDetails: scored?.map((doc, index) => ({
-          documentId: doc.id,
-          documentSection: doc.section,
-          similarityScore: doc.score,
-          scopeFiltered: scope && scope.length > 0
-        })),
-        decisionTrace
-      });
+    // Log async after response sent - but wait for completion to prevent function termination
+    const loggingPromise = logRequestAsync({
+      userMessage,
+      normalizedMessage,
+      responseAnswer: responseData.answer,
+      routing: responseData.routing,
+      sources: responseData.sources,
+      responseTimeMs: Date.now() - startTime,
+      openai: openaiMetadata,
+      embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+      errorMessage,
+      retrievalDetails: scored?.map((doc, index) => ({
+        documentId: doc.id,
+        documentSection: doc.section,
+        similarityScore: doc.score,
+        scopeFiltered: scope && scope.length > 0
+      })),
+      decisionTrace
     });
+
+    // Wait for logging to complete before function can terminate
+    await loggingPromise;
 
     return;
 
@@ -1099,26 +1105,27 @@ async function handler(req, res) {
     const errorResponse = { error: 'server error' };
     res.status(500).json(errorResponse);
 
-    // Log error async
-    setImmediate(() => {
-      logRequestAsync({
-        userMessage,
-        normalizedMessage,
-        responseAnswer: null,
-        routing: null,
-        sources: [],
-        responseTimeMs: Date.now() - startTime,
-        openai: openaiMetadata,
-        embeddingCacheHit: openaiMetadata.embeddingCacheHit,
-        errorMessage,
-        // Cost tracking - errors may have partial costs
-        embeddingTokens: embeddingTokens || 0,
-        chatCompletionTokens: chatCompletionTokens || 0,
-        estimatedCost: estimatedCost || 0,
-        apiCallsCount: layerTimer.apiCalls || 0,
-        retrievalDetails: [] // Error cases don't have document retrieval
-      });
+    // Log error async - but wait for completion to prevent function termination
+    const loggingPromise = logRequestAsync({
+      userMessage,
+      normalizedMessage,
+      responseAnswer: null,
+      routing: null,
+      sources: [],
+      responseTimeMs: Date.now() - startTime,
+      openai: openaiMetadata,
+      embeddingCacheHit: openaiMetadata.embeddingCacheHit,
+      errorMessage,
+      // Cost tracking - errors may have partial costs
+      embeddingTokens: embeddingTokens || 0,
+      chatCompletionTokens: chatCompletionTokens || 0,
+      estimatedCost: estimatedCost || 0,
+      apiCallsCount: layerTimer.apiCalls || 0,
+      retrievalDetails: [] // Error cases don't have document retrieval
     });
+
+    // Wait for logging to complete before function can terminate
+    await loggingPromise;
   }
 }
 
