@@ -22,6 +22,13 @@
   .input{flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:12px;font-size:14px}
   .send{background:#111;color:#fff;border:none;border-radius:8px;padding:12px 14px;cursor:pointer}
   .footer-note{padding:0 16px 16px 16px}
+  .typing{position:relative;padding:16px 20px}
+  .typing-dots{display:inline-flex;gap:4px;align-items:center}
+  .typing-dot{width:8px;height:8px;border-radius:50%;background:#6b7280;animation:typing 1.4s infinite}
+  .typing-dot:nth-child(1){animation-delay:0ms}
+  .typing-dot:nth-child(2){animation-delay:200ms}
+  .typing-dot:nth-child(3){animation-delay:400ms}
+  @keyframes typing{0%,60%,100%{opacity:0.3;transform:scale(1)}30%{opacity:1;transform:scale(1.2)}}
   `;
   const style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
 
@@ -60,8 +67,24 @@
     bodyEl.scrollTop = bodyEl.scrollHeight;
   };
 
+  const addTyping = () => {
+    const div = document.createElement('div');
+    div.className = 'msg bot typing';
+    div.innerHTML = '<div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+    bodyEl.appendChild(div);
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+    return div;
+  };
+
+  const removeTyping = (typingEl) => {
+    if (typingEl && typingEl.parentNode) {
+      typingEl.parentNode.removeChild(typingEl);
+    }
+  };
+
   const ask = async (q) => {
     addMsg(q, 'user'); inputEl.value = '';
+    const typingEl = addTyping();
     try {
       const r = await fetch(`${API_BASE}/api/chat`, {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -69,8 +92,10 @@
       });
       const j = await r.json();
       const answer = (j && (j.answer || j.text || 'Sorry, I could not answer.'));
+      removeTyping(typingEl);
       addMsg(answer, 'bot');
     } catch (e){
+      removeTyping(typingEl);
       addMsg('Hmm, I hit a snag. Please try again or email '+BRAND_EMAIL+'.');
     }
   };
