@@ -35,9 +35,9 @@ export default async function handler(req, res) {
       });
     }
 
-    // Get migration records
+    // Get migration records with error details
     const migrations = await db`
-      SELECT version, applied_at, status, instance_id
+      SELECT version, applied_at, status, instance_id, error_message, execution_time_ms
       FROM migration_history
       ORDER BY applied_at DESC
       LIMIT 10
@@ -59,7 +59,9 @@ export default async function handler(req, res) {
           version: row.version,
           appliedAt: row.applied_at,
           status: row.status,
-          instanceId: row.instance_id
+          instanceId: row.instance_id,
+          errorMessage: row.error_message,
+          executionTimeMs: row.execution_time_ms
         })),
         active_locks: (locks.rows || locks).map(row => ({
           lockName: row.lock_name,
