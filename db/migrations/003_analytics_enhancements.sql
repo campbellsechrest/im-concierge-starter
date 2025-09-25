@@ -61,7 +61,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ language 'plpgsql' VOLATILE;
 
 CREATE TRIGGER update_metrics_hourly_updated_at
 BEFORE UPDATE ON metrics_hourly
