@@ -31,12 +31,19 @@ export default async function handler(req, res) {
     let evaluationSummary = null;
 
     if (dbHealth.healthy) {
+      // Get query statistics independently
       try {
         stats = await getQueryStats(24); // Last 24 hours
+      } catch (error) {
+        console.warn('Failed to fetch query stats:', error.message);
+        stats = { error: 'Failed to fetch query stats' };
+      }
+
+      // Get evaluation summary independently
+      try {
         evaluationSummary = await getEvaluationSummary(5); // Last 5 evaluation runs
       } catch (error) {
-        console.warn('Failed to fetch stats:', error.message);
-        stats = { error: 'Failed to fetch query stats' };
+        console.warn('Failed to fetch evaluation summary:', error.message);
         evaluationSummary = { error: 'Failed to fetch evaluation summary' };
       }
     }
