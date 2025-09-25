@@ -55,18 +55,18 @@ ON routing_decisions(layer, triggered, execution_order);
 CREATE INDEX IF NOT EXISTS idx_metrics_hourly_time_env
 ON metrics_hourly(metric_hour, environment);
 
--- Add updated_at trigger for metrics table
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql' VOLATILE;
+-- Skip trigger for now - focus on essential columns
+-- CREATE OR REPLACE FUNCTION update_updated_at_column()
+-- RETURNS TRIGGER AS $$
+-- BEGIN
+--     NEW.updated_at = NOW();
+--     RETURN NEW;
+-- END;
+-- $$ language 'plpgsql' VOLATILE;
 
-CREATE TRIGGER update_metrics_hourly_updated_at
-BEFORE UPDATE ON metrics_hourly
-FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- CREATE TRIGGER update_metrics_hourly_updated_at
+-- BEFORE UPDATE ON metrics_hourly
+-- FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Comments for documentation
 COMMENT ON COLUMN query_logs.embedding_tokens IS 'Token count for embedding API calls';
