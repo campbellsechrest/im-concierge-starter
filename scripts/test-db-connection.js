@@ -83,7 +83,7 @@ try {
       ${testData.question},
       ${testData.passed},
       ${getCurrentEnvironment()},
-      'test-commit-' + ${Date.now()}
+      ${'test-commit-' + Date.now()}
     )
     RETURNING id
   `;
