@@ -337,43 +337,44 @@ async function embedQuery(input) {
   return vector;
 }
 
+// Risk tokens that indicate potential safety concerns
+const RISK_TOKENS = [
+  // Medical/health terms
+  'pregnant', 'pregnancy', 'breastfeeding', 'nursing', 'conceive', 'ttc', 'trying to conceive',
+  // Medication terms
+  'ssri', 'snri', 'maoi', 'antidepressant', 'prozac', 'zoloft', 'lexapro', 'wellbutrin',
+  'adderall', 'vyvanse', 'ritalin', 'stimulant', 'adhd', 'add',
+  'warfarin', 'blood thinner', 'anticoagulant', 'coumadin',
+  'seizure', 'epilepsy', 'diabetes', 'thyroid', 'insulin',
+  'birth control', 'contraceptive',
+  // Dosage/overdose terms
+  'overdose', 'too many', 'too much', 'mg', 'milligram', 'gram',
+  // Emergency terms
+  'chest pain', 'poisoning', 'emergency', '911', 'hospital',
+  // Drug interaction terms
+  'interaction', 'combine', 'mix', 'together with', 'along with'
+];
+
+// Product context indicators (reduce safety concern weight)
+const PRODUCT_CONTEXT_INDICATORS = [
+  'a-minus', 'supplement', 'activated carbon', 'acetaldehyde',
+  'ingredients', 'what is', 'how does', 'science', 'technology',
+  'mechanism', 'work', 'take', 'dosage', 'serving', 'capsule'
+];
+
+function countRiskTokens(message) {
+  const lowerMessage = message.toLowerCase();
+  return RISK_TOKENS.filter(token => lowerMessage.includes(token.toLowerCase())).length;
+}
+
+function hasProductContext(message) {
+  const lowerMessage = message.toLowerCase();
+  return PRODUCT_CONTEXT_INDICATORS.some(indicator => lowerMessage.includes(indicator));
+}
+
 async function runSafetyEmbedding(normalizedMessage, getEmbedding) {
   const router = getSafetyRouter();
   if (!router?.entries?.length) return null;
-
-  // Check if this is a product information query that should bypass safety checks
-  const productInfoPatterns = [
-    /what is.*a-?minus/i,
-    /what is the science/i,
-    /how does (a-?minus|it) work/i,
-    /what.*ingredients/i,
-    /tell me about a-?minus/i,
-    /explain.*a-?minus/i,
-    /research behind/i,
-    /mechanism of action/i,
-    /scientifically proven/i,
-    /when should I take/i,
-    /when.*take.*a-?minus/i,
-    /how.*take.*a-?minus/i,
-    /timing.*a-?minus/i,
-    /dose.*a-?minus/i,
-    /dosage.*a-?minus/i,
-    /stack.*a-?minus/i,
-    /a-?minus.*with.*supplement/i,
-    /spacing.*a-?minus/i,
-    /hours.*apart/i,
-    /what.*stack.*a-?minus/i,
-    /can.*stack.*a-?minus/i,
-    /a-?minus.*stack/i,
-    /combine.*a-?minus/i,
-    /a-?minus.*combine/i
-  ];
-
-  // If the query is asking for product information/science, skip safety embedding check
-  // to prevent false positives from "A-Minus" mentions
-  if (productInfoPatterns.some(pattern => pattern.test(normalizedMessage))) {
-    return null;
-  }
 
   const embedding = await getEmbedding();
   let best = null;
@@ -385,14 +386,36 @@ async function runSafetyEmbedding(normalizedMessage, getEmbedding) {
     }
   }
 
-  if (best && best.score >= SAFETY_THRESHOLD) {
+  if (!best) return null;
+
+  // Calculate weighted safety score
+  const embeddingScore = best.score;
+  const riskTokenCount = countRiskTokens(normalizedMessage);
+  const hasProductCtx = hasProductContext(normalizedMessage);
+
+  // Risk token score (0-1 scale, capped at 1)
+  const riskTokenScore = Math.min(riskTokenCount * 0.3, 1.0);
+
+  // Weighted safety score: embedding (70%) + risk tokens (30%)
+  let safetyScore = (embeddingScore * 0.7) + (riskTokenScore * 0.3);
+
+  // Reduce score if it's clearly about product information
+  if (hasProductCtx && riskTokenCount < 2) {
+    safetyScore *= 0.6; // Reduce safety score by 40%
+  }
+
+  if (safetyScore >= SAFETY_THRESHOLD) {
     return {
       answer: best.response,
       routing: {
         layer: 'safety-embed',
         rule: best.id,
         category: best.category,
-        score: Number(best.score.toFixed(3))
+        score: Number(safetyScore.toFixed(3)),
+        // Add debug info for analysis
+        embeddingScore: Number(embeddingScore.toFixed(3)),
+        riskTokenCount,
+        hasProductContext: hasProductCtx
       }
     };
   }
