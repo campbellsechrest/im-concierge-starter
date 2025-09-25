@@ -47,8 +47,8 @@ Browser (widget)
 
 1. **Pre-normalize**: Standardize input for consistent pattern matching
 2. **Safety regex**: Hard-stop emergencies, pregnancy, prescriptions with scripted responses
-3. **Safety embedding**: Semantic safety gate using cached embeddings (`router-safety.json`)
-4. **Business regex**: Deterministic keyword routing for shipping/returns/product queries
+3. **Business regex**: Deterministic keyword routing for shipping/returns/product queries
+4. **Safety embedding**: Semantic safety gate using cached embeddings (`router-safety.json`)
 5. **Semantic intent**: Machine learning routing using intent exemplars (`router-intents.json`)
 6. **RAG fallback**: Traditional retrieval-augmented generation from knowledge base
 
@@ -214,18 +214,18 @@ The router processes queries through multiple layers before reaching RAG:
 - Prescription medications: `SSRI`, `blood thinner`, etc.
 - Returns scripted refusal without AI processing
 
-**3. Safety embedding gate**
-- Embeds normalized query once
-- Compares against cached refusal exemplars (`router-safety.json`)
-- Refuses if similarity ≥ `ROUTER_SAFETY_THRESHOLD` (default 0.42)
-
-**4. Business regex router**
+**3. Business regex router**
 - Deterministic keyword matching for common intents
 - Maps to response templates in `router/intents.json`
 - Can provide immediate responses or set scope for RAG
 
+**4. Safety embedding gate**
+- Embeds normalized query once
+- Compares against cached refusal exemplars (`router-safety.json`)
+- Refuses if similarity ≥ `ROUTER_SAFETY_THRESHOLD` (default 0.42)
+
 **5. Semantic intent router**
-- Uses cached query embedding from step 3
+- Uses cached query embedding from step 4
 - Scores against intent exemplars (`router-intents.json`)
 - Routes when similarity ≥ intent-specific thresholds
 - Can narrow RAG scope or provide direct responses
