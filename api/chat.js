@@ -563,6 +563,7 @@ export default async function handler(req, res) {
     userMessage = message;
     normalizedMessage = entityAwareNormalize(message);
 
+    // 1. Safety Regex - Fast deterministic safety checks
     const safetyRegex = runSafetyRegex(message);
     if (safetyRegex) {
       responseData = {
@@ -592,6 +593,46 @@ export default async function handler(req, res) {
       return;
     }
 
+    // 2. Business Regex - Fast template responses for common queries (no API calls)
+    let routing = null;
+    let scope = null;
+
+    const business = runBusinessRegex(normalizedMessage);
+    if (business) {
+      const applied = applyIntentMetadata(business.intent, 'business-regex');
+      routing = applied.routing;
+      scope = applied.scope;
+      if (applied.response) {
+        responseData = {
+          answer: applied.response,
+          sources: [],
+          routing
+        };
+
+        // Send response immediately
+        respond(res, responseData);
+
+        // Log async after response sent
+        setImmediate(() => {
+          logRequestAsync({
+            userMessage,
+            normalizedMessage,
+            responseAnswer: responseData.answer,
+            routing: responseData.routing,
+            sources: responseData.sources,
+            responseTimeMs: Date.now() - startTime,
+            openai: openaiMetadata,
+            embeddingCacheHit: false, // No embedding used
+            errorMessage,
+            retrievalDetails: [] // Business-regex doesn't do document retrieval
+          });
+        });
+
+        return;
+      }
+    }
+
+    // 3. Setup embedding computation for remaining layers (computed once, reused)
     const getEmbedding = (() => {
       let cached;
       return async () => {
@@ -607,6 +648,7 @@ export default async function handler(req, res) {
       };
     })();
 
+    // 4. Safety Embedding - Weighted semantic safety detection
     const safetyEmbed = await runSafetyEmbedding(normalizedMessage, getEmbedding);
     if (safetyEmbed) {
       responseData = {
@@ -637,48 +679,12 @@ export default async function handler(req, res) {
       return;
     }
 
-    let routing = null;
-    let scope = null;
-
-    const business = runBusinessRegex(normalizedMessage);
-    if (business) {
-      const applied = applyIntentMetadata(business.intent, 'business-regex');
-      routing = applied.routing;
-      scope = applied.scope;
-      if (applied.response) {
-        responseData = {
-          answer: applied.response,
-          sources: [],
-          routing
-        };
-
-        // Send response immediately
-        respond(res, responseData);
-
-        // Log async after response sent
-        setImmediate(() => {
-          logRequestAsync({
-            userMessage,
-            normalizedMessage,
-            responseAnswer: responseData.answer,
-            routing: responseData.routing,
-            sources: responseData.sources,
-            responseTimeMs: Date.now() - startTime,
-            openai: openaiMetadata,
-            embeddingCacheHit: openaiMetadata.embeddingCacheHit,
-            errorMessage,
-            retrievalDetails: [] // Business-regex doesn't do document retrieval
-          });
-        });
-
-        return;
-      }
-    } else {
-      const semanticIntent = await runIntentEmbedding(getEmbedding);
-      if (semanticIntent) {
-        routing = semanticIntent.routing;
-        scope = semanticIntent.scope;
-        if (semanticIntent.response) {
+    // 5. Intent Embedding - Semantic intent classification (reuses embedding)
+    const semanticIntent = await runIntentEmbedding(getEmbedding);
+    if (semanticIntent) {
+      routing = semanticIntent.routing;
+      scope = semanticIntent.scope;
+      if (semanticIntent.response) {
           responseData = {
             answer: semanticIntent.response,
             sources: [],
@@ -706,9 +712,9 @@ export default async function handler(req, res) {
 
           return;
         }
-      }
     }
 
+    // 6. RAG - Final fallback with document retrieval (reuses embedding)
     if (!fs.existsSync(EMBEDDINGS_PATH)) {
       return res.status(500).json({ error: 'embeddings.json not found. Run npm run ingest.' });
     }
