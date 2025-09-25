@@ -46,5 +46,49 @@
       "When should I take A-Minus after drinking?",
       "How many capsules can I take in a day?"
     ]
+  },
+  {
+    "id": "product-overview",
+    "label": "Basic product information",
+    "threshold": 0.25,
+    "response": "A-Minus is a dietary supplement powered by patent-pending Activated Carbon Technology that selectively adsorbs acetaldehyde in the gut. It contains 100% pure activated carbon and helps bind acetaldehyde before it enters the bloodstream, aiding in its elimination during digestion. It's manufactured in an FDA-registered, GMP-compliant facility in the United States.",
+    "examples": [
+      "What is A-Minus?",
+      "Tell me about A-Minus",
+      "What does A-Minus do?"
+    ]
+  },
+  {
+    "id": "product-mechanism",
+    "label": "How A-Minus works",
+    "threshold": 0.25,
+    "response": "A-Minus uses patent-pending Activated Carbon Technology tuned for selective adsorption of acetaldehyde in the gut. When you drink alcohol, your body metabolizes ethanol into acetaldehyde—a toxin that contributes to hangover symptoms. A-Minus binds this acetaldehyde before it enters your bloodstream, helping your body eliminate it during normal digestion. The activated carbon delivers ~20× higher acetaldehyde adsorption versus generic activated charcoal.",
+    "examples": [
+      "How does A-Minus work?",
+      "What's the science behind A-Minus?",
+      "How does activated carbon technology work?"
+    ]
+  },
+  {
+    "id": "product-ingredients",
+    "label": "A-Minus ingredients",
+    "threshold": 0.25,
+    "response": "A-Minus contains 700mg of activated carbon (100% pure carbon) per serving (2 capsules). The capsules are made from hydroxypropyl methylcellulose (HPMC). That's it—no fillers, additives, or other ingredients. The activated carbon is specifically tuned for acetaldehyde adsorption and manufactured in an FDA-registered, GMP-compliant facility in the United States.",
+    "examples": [
+      "What are the ingredients in A-Minus?",
+      "What is A-Minus made of?",
+      "What's in A-Minus?"
+    ]
+  },
+  {
+    "id": "product-usage",
+    "label": "How to take A-Minus",
+    "threshold": 0.25,
+    "response": "Take 2 capsules (1 serving) after alcohol consumption—as soon as possible after your last drink—with a large glass of water. Use 1 serving per ~4-5 drinks of alcohol. Maximum: Do not exceed 4 servings (8 capsules) in 24 hours. Can be taken with or without food. Leave 2 hours between A-Minus and any prescription or OTC medications.",
+    "examples": [
+      "How do I take A-Minus?",
+      "When should I take A-Minus?",
+      "What's the dosage for A-Minus?"
+    ]
   }
 ]

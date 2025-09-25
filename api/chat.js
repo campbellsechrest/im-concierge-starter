@@ -123,14 +123,50 @@ const BUSINESS_REGEX_RULES = [
     ]
   },
   {
-    name: 'product-keywords',
-    intent: 'product',
+    name: 'product-overview',
+    intent: 'product-overview',
+    patterns: [
+      /\bwhat is a-?minus\b/i,
+      /\btell me about a-?minus\b/i,
+      /\bexplain a-?minus\b/i,
+      /\ba-?minus\s+(overview|summary|info|information)\b/i,
+      /\bwhat does a-?minus do\b/i
+    ]
+  },
+  {
+    name: 'product-mechanism',
+    intent: 'product-mechanism',
+    patterns: [
+      /\bhow does (a-?minus|it) work\b/i,
+      /\bhow.*a-?minus.*work/i,
+      /\bmechanism\b/i,
+      /\bactivated carbon.*work/i,
+      /\bscience behind a-?minus\b/i,
+      /\btechnology.*a-?minus/i
+    ]
+  },
+  {
+    name: 'product-ingredients',
+    intent: 'product-ingredients',
     patterns: [
       /\bingredients?\b/i,
-      /\bwhat is a-?minus\b/i,
-      /\bhow does (a-?minus|it) work\b/i,
+      /\bwhat.*in a-?minus\b/i,
+      /\bmade of\b/i,
+      /\bcomposition\b/i,
+      /\bcontains?\b/i
+    ]
+  },
+  {
+    name: 'product-usage',
+    intent: 'product-usage',
+    patterns: [
+      /\bhow.*take a-?minus\b/i,
+      /\bwhen.*take a-?minus\b/i,
+      /\bdosage\b/i,
       /\bserving\b/i,
-      /\bdose\b/i
+      /\bdose\b/i,
+      /\bhow many.*capsules?\b/i,
+      /\binstructions\b/i
     ]
   }
 ];
@@ -146,12 +182,69 @@ let knowledgeCorpus;
 let safetyRouter;
 let intentRouter;
 
+// Product entities that should be protected during normalization
+const PRODUCT_ENTITIES = [
+  { original: 'A-Minus', normalized: 'a-minus', variants: ['A‑Minus', 'A-minus', 'a‑minus', 'AMinus', 'aminus'] },
+  { original: 'Intelligent Molecules', normalized: 'intelligent molecules', variants: ['intelligent-molecules', 'intelligentmolecules'] }
+];
+
+// Generate entity protection tokens (unlikely to appear in normal text)
+const ENTITY_TOKENS = new Map();
+PRODUCT_ENTITIES.forEach((entity, index) => {
+  const token = `__ENTITY_${index}__`;
+  ENTITY_TOKENS.set(token, entity);
+});
+
+function protectEntities(message) {
+  let protectedMessage = message;
+  let entityMap = new Map();
+
+  PRODUCT_ENTITIES.forEach((entity, index) => {
+    const token = `__ENTITY_${index}__`;
+    const allVariants = [entity.original, ...entity.variants];
+
+    // Create regex that matches any variant (case insensitive)
+    const pattern = new RegExp(`\\b(${allVariants.map(v => v.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')).join('|')})\\b`, 'gi');
+
+    if (pattern.test(protectedMessage)) {
+      protectedMessage = protectedMessage.replace(pattern, (match) => {
+        entityMap.set(token, entity.normalized);
+        return token;
+      });
+    }
+  });
+
+  return { message: protectedMessage, entityMap };
+}
+
+function restoreEntities(message, entityMap) {
+  let restoredMessage = message;
+
+  entityMap.forEach((normalizedForm, token) => {
+    // Replace both original case and lowercase version of token
+    restoredMessage = restoredMessage.replace(new RegExp(token, 'gi'), normalizedForm);
+  });
+
+  return restoredMessage;
+}
+
 function normalizeMessage(message = '') {
   return message
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .replace(/[\u2010-\u2015\u2212\uFE63\uFF0D]/g, '-') // Normalize various hyphen/dash characters to regular hyphen
     .trim();
+}
+
+function entityAwareNormalize(message = '') {
+  // Stage 1: Protect entities
+  const { message: protectedMessage, entityMap } = protectEntities(message);
+
+  // Stage 2: Apply standard normalization
+  const normalizedMessage = normalizeMessage(protectedMessage);
+
+  // Stage 3: Restore protected entities
+  return restoreEntities(normalizedMessage, entityMap);
 }
 
 function loadJsonCache(cacheRef, filePath) {
@@ -445,7 +538,7 @@ export default async function handler(req, res) {
     }
 
     userMessage = message;
-    normalizedMessage = normalizeMessage(message);
+    normalizedMessage = entityAwareNormalize(message);
 
     const safetyRegex = runSafetyRegex(message);
     if (safetyRegex) {
