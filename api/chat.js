@@ -250,6 +250,7 @@ async function runSafetyEmbedding(normalizedMessage, getEmbedding) {
 
   // Check if this is a product information query that should bypass safety checks
   const productInfoPatterns = [
+    /what is.*a-?minus/i,
     /what is the science/i,
     /how does (a-?minus|it) work/i,
     /what.*ingredients/i,
