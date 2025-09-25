@@ -11,6 +11,8 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      POSTGRES_URL: ${{ secrets.DATABASE_URL }}
+      POSTGRES_URL_NON_POOLING: ${{ secrets.DATABASE_URL }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -28,6 +30,11 @@ jobs:
 
       - name: Ensure embeddings are committed
         run: git diff --exit-code data/embeddings.json
+
+      - name: Test database connection
+        run: |
+          echo "Testing database connection..."
+          node scripts/test-db-connection.js || echo "Database test failed but continuing..."
 
       - name: Run retrieval accuracy suite
         run: npm run eval:accuracy

@@ -262,19 +262,36 @@ async function main() {
     const gitCommit = getGitCommit();
     const deploymentId = getDeploymentId();
 
-    console.log('Storing evaluation results in database...');
-    await logEvaluationResults(results, gitCommit, deploymentId);
-    console.log('✅ Evaluation results stored successfully');
+    console.log('');
+    console.log('Database Storage:');
+    console.log('  Attempting to store evaluation results...');
+    console.log('  Environment:', process.env.VERCEL_ENV || process.env.NODE_ENV || 'unknown');
+    console.log('  DATABASE_URL set:', !!process.env.DATABASE_URL);
+    console.log('  POSTGRES_URL set:', !!process.env.POSTGRES_URL);
+    console.log('  POSTGRES_URL_NON_POOLING set:', !!process.env.POSTGRES_URL_NON_POOLING);
 
     if (gitCommit) {
-      console.log(`📝 Git commit: ${gitCommit.substring(0, 8)}`);
+      console.log('  Git commit:', gitCommit.substring(0, 8));
     }
     if (deploymentId) {
-      console.log(`🚀 Deployment: ${deploymentId}`);
+      console.log('  Deployment ID:', deploymentId);
     }
+
+    await logEvaluationResults(results, gitCommit, deploymentId);
+    console.log('  ✅ Evaluation results stored successfully in database');
   } catch (error) {
-    console.warn('⚠️ Failed to store evaluation results in database:', error.message);
-    // Don't fail the evaluation if database storage fails
+    console.error('  ❌ Failed to store evaluation results in database');
+    console.error('  Error type:', error.constructor.name);
+    console.error('  Error message:', error.message);
+
+    // Log more details in CI environment
+    if (process.env.CI || process.env.GITHUB_ACTIONS) {
+      console.error('  Full error:', error);
+      console.error('  Stack trace:', error.stack);
+    }
+
+    // Still don't fail the evaluation if database storage fails
+    console.log('  ⚠️ Continuing despite database storage failure...');
   }
 
   if (failed.length) {
