@@ -4,6 +4,7 @@
     "label": "Shipping questions",
     "threshold": 0.32,
     "scope": ["shipping-returns"],
+    "response": "We ship A-Minus orders quickly with reliable delivery. Shipping costs and delivery timeframes depend on your location. For specific shipping rates and delivery estimates to your area, please email info@intelligentmolecules.com and our team will provide detailed shipping information.",
     "examples": [
       "How fast do you ship orders?",
       "Where do you ship A-Minus?",
@@ -16,6 +17,7 @@
     "label": "Returns and refunds",
     "threshold": 0.32,
     "scope": ["shipping-returns"],
+    "response": "We offer a satisfaction guarantee with easy returns and refunds. If you're not completely satisfied with A-Minus, we'll work with you on a return or refund. Please email info@intelligentmolecules.com with your order details and our team will help process your return and refund request promptly.",
     "examples": [
       "How do I get a refund?",
       "Can I return my first order?",

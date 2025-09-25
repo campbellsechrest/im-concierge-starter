@@ -29,8 +29,15 @@ const SAFETY_REGEX_RULES = [
       /\bpoison(ing)?\b/i,
       /\boverdose\b/i,
       /\balcohol poisoning\b/i,
+      // Overdose/excess consumption patterns
+      /\b(took|take) too many\b/i,
+      /\btoo many (capsules|pills)\b/i,
+      /\bexcess(ive)? (dosage|amount)\b/i,
+      /\b(multiple|several|many) servings\b/i,
       // Co-occurrence: risk symptoms + action/concern words
-      /(?=.*\b(dizzy|nauseous|vomiting|chest|faint|pain)\b)(?=.*\b(took|feel|after|help|what)\b)/i
+      /(?=.*\b(dizzy|nauseous|vomiting|chest|faint|pain|terrible|sick|unwell)\b)(?=.*\b(took|feel|after|help|what)\b)/i,
+      // Co-occurrence: excessive consumption + negative outcomes
+      /(?=.*\b(took|consumed|had)\b)(?=.*\b(too many|multiple|excess|several)\b)(?=.*\b(feel|terrible|sick|bad|wrong)\b)/i
     ],
     message: () =>
       `I'm really sorry you're feeling unwell. I'm not a medical professional, but symptoms like this need immediate care. Please contact emergency services (call 911 or your local equivalent) or poison control right away. Once you're safe, email ${HUMAN_SUPPORT_EMAIL} and the team can follow up.`,
@@ -61,7 +68,13 @@ const SAFETY_REGEX_RULES = [
       /(?=.*\b(prescription|medication|medicine|drug|ssri|snri|maoi|antidepressant|blood thinner|eliquis|xarelto|warfarin|adderall|vyvanse|benzodiazepine|anxiety med)\b)(?=.*\b(a-?minus|with|combine|take|together|interaction|safe)\b)(?!.*\b(general|other|any|all)\s+(supplements|vitamins)\b)/i,
       // Specific medication names with interaction terms
       /\b(?:combine|take|mix|together with|along with|interaction|safe with).*\b(ssri|prozac|zoloft|lexapro|adderall|vyvanse|warfarin|blood thinner)\b/i,
-      /\b(ssri|prozac|zoloft|lexapro|adderall|vyvanse|warfarin|blood thinner).*\b(?:combine|take|mix|together with|along with|interaction|safe with)\b/i
+      /\b(ssri|prozac|zoloft|lexapro|adderall|vyvanse|warfarin|blood thinner).*\b(?:combine|take|mix|together with|along with|interaction|safe with)\b/i,
+      // Direct medication statements with safety questions
+      /\bi take (blood thinners?|warfarin|eliquis|xarelto|coumadin)\b/i,
+      /\bi'm on (blood thinners?|warfarin|eliquis|xarelto|coumadin)\b/i,
+      /\b(blood thinners?|warfarin|eliquis|xarelto|coumadin).*\b(can i|safe|use|take)\b/i,
+      // Co-occurrence: medication + A-Minus safety questions
+      /(?=.*\b(blood thinner|warfarin|prescription|medication|ssri|antidepressant)\b)(?=.*\b(can i use|safe|a-?minus)\b)/i
     ],
     message: () =>
       `I can't provide guidance on combining A-Minus with prescription or OTC medicines. Please check with your doctor or pharmacist, and feel free to email ${HUMAN_SUPPORT_EMAIL} so a human can help.`,
@@ -72,8 +85,14 @@ const SAFETY_REGEX_RULES = [
     patterns: [
       /\bi am (?:1[0-7]|under (?:18|21))\b/i,
       /\bi'm (?:1[0-7]|under (?:18|21))\b/i,
-      /\bunderage\b.*\b(?:drink|alcohol|supplement)\b/i,
-      /\b(?:16|17)\s*years?\s*old\b/i
+      /\bunderage\b.*\b(?:drink|alcohol|supplement|a-?minus|want|try)\b/i,
+      /\b(?:16|17)\s*years?\s*old\b/i,
+      // Direct underage statements with intent
+      /\bi am underage\b/i,
+      /\bi'm underage\b/i,
+      // Underage + wanting to try A-Minus
+      /(?=.*\bunderage\b)(?=.*\b(want|try|use|take|get)\b)/i,
+      /(?=.*\b(under 18|under 21|17|16)\b)(?=.*\b(a-?minus|supplement)\b)/i
     ],
     message: () =>
       `A-Minus is only for adults of legal drinking age. I'm not able to help here, but you can reach the team at ${HUMAN_SUPPORT_EMAIL} if you have other questions.`,

@@ -9,7 +9,8 @@
   "scripts": {
     "ingest": "node scripts/ingest.js",
     "eval:accuracy": "node scripts/eval-retrieval.js",
-    "db:migrate": "node scripts/migrate.js"
+    "db:migrate": "node scripts/migrate.js",
+    "test:routing": "node tests/routing-test-suite.js"
   },
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
