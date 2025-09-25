@@ -16,11 +16,13 @@ export default async function handler(req, res) {
     const db = getConnection();
     const env = getCurrentEnvironment();
 
-    // Simple count query without any parameters
+    // Simple count query without INTERVAL parameters
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
     const result = await db`
       SELECT
         COUNT(*) as total_queries,
-        COUNT(CASE WHEN timestamp >= NOW() - INTERVAL '1 day' THEN 1 END) as recent_queries
+        COUNT(CASE WHEN timestamp >= ${oneDayAgo} THEN 1 END) as recent_queries
       FROM query_logs
       WHERE environment = ${env}
     `;
